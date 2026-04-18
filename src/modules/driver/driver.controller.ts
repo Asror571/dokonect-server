@@ -1,0 +1,81 @@
+import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { DriverService } from './driver.service';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Role } from '@prisma/client';
+
+@ApiTags('Driver')
+@Controller('driver')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.DRIVER)
+@ApiBearerAuth()
+export class DriverController {
+    constructor(private driverService: DriverService) { }
+
+    @Get('dashboard')
+    @ApiOperation({ summary: 'Driver dashboard' })
+    getDashboard(@CurrentUser('driver') driver: any) {
+        return this.driverService.getDashboard(driver.id);
+    }
+
+    @Post('location')
+    @ApiOperation({ summary: 'Lokatsiyani yangilash' })
+    updateLocation(
+        @CurrentUser('driver') driver: any,
+        @Body() body: { lat: number; lng: number },
+    ) {
+        return this.driverService.updateLocation(driver.id, body.lat, body.lng);
+    }
+
+    @Patch('status')
+    @ApiOperation({ summary: 'Online/offline status' })
+    updateStatus(
+        @CurrentUser('driver') driver: any,
+        @Body('isOnline') isOnline: boolean,
+    ) {
+        return this.driverService.updateStatus(driver.id, isOnline);
+    }
+
+    @Post('orders/:orderId/accept')
+    @ApiOperation({ summary: 'Buyurtmani qabul qilish' })
+    acceptOrder(
+        @Param('orderId') orderId: string,
+        @CurrentUser('driver') driver: any,
+    ) {
+        return this.driverService.acceptOrder(driver.id, orderId);
+    }
+
+    @Patch('orders/:orderId/status')
+    @ApiOperation({ summary: 'Buyurtma statusini yangilash' })
+    updateOrderStatus(
+        @Param('orderId') orderId: string,
+        @CurrentUser('driver') driver: any,
+        @Body() body: {
+            status: string;
+            photoProof?: string;
+            signature?: string;
+            problemReport?: string;
+        },
+    ) {
+        return this.driverService.updateOrderStatus(
+            orderId,
+            driver.id,
+            body.status,
+            body.photoProof,
+            body.signature,
+            body.problemReport,
+        );
+    }
+
+    @Get('earnings')
+    @ApiOperation({ summary: 'Daromad tarixi' })
+    getEarnings(
+        @CurrentUser('driver') driver: any,
+        @Query('period') period?: string,
+    ) {
+        return this.driverService.getEarnings(driver.id, period);
+    }
+}
