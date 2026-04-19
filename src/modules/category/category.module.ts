@@ -5,8 +5,8 @@ import { BrandController } from './brand.controller';
 import { BrandService } from './brand.service';
 
 @Module({
-    controllers: [CategoryController, BrandController],
-    providers: [CategoryService, BrandService],
-    exports: [CategoryService, BrandService],
+  controllers: [CategoryController, BrandController],
+  providers: [CategoryService, BrandService],
+  exports: [CategoryService, BrandService],
 })
-export class CategoryModule { }
+export class CategoryModule {}

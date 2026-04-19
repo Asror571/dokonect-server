@@ -11,64 +11,61 @@ import { Public } from '../../common/decorators/public.decorator';
 @ApiTags('Brands')
 @Controller('brands')
 export class BrandController {
-    constructor(private brandService: BrandService) { }
+  constructor(private brandService: BrandService) {}
 
-    @Get()
-    @Public()
-    @ApiOperation({ summary: 'Brendlar ro\'yxati' })
-    getBrands(@Param('distributorId') distributorId: string) {
-        return this.brandService.getBrands(distributorId);
-    }
+  @Get()
+  @Public()
+  @ApiOperation({ summary: "Brendlar ro'yxati" })
+  getBrands(@Param('distributorId') distributorId: string) {
+    return this.brandService.getBrands(distributorId);
+  }
 
-    @Get(':id')
-    @Public()
-    @ApiOperation({ summary: 'Brend tafsiloti' })
-    getBrand(@Param('id') id: string, @Param('distributorId') distributorId: string) {
-        return this.brandService.getBrand(id, distributorId);
-    }
+  @Get(':id')
+  @Public()
+  @ApiOperation({ summary: 'Brend tafsiloti' })
+  getBrand(@Param('id') id: string, @Param('distributorId') distributorId: string) {
+    return this.brandService.getBrand(id, distributorId);
+  }
 
-    @Post()
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(Role.DISTRIBUTOR)
-    @ApiBearerAuth()
-    @ApiOperation({ summary: 'Yangi brend' })
-    createBrand(
-        @CurrentUser('distributor') distributor: any,
-        @Body()
-        body: {
-            name: string;
-            logo?: string;
-        },
-    ) {
-        return this.brandService.createBrand(distributor.id, body);
-    }
+  @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.DISTRIBUTOR)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Yangi brend' })
+  createBrand(
+    @CurrentUser('distributor') distributor: any,
+    @Body()
+    body: {
+      name: string;
+      logo?: string;
+    },
+  ) {
+    return this.brandService.createBrand(distributor.id, body);
+  }
 
-    @Put(':id')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(Role.DISTRIBUTOR)
-    @ApiBearerAuth()
-    @ApiOperation({ summary: 'Brendni tahrirlash' })
-    updateBrand(
-        @Param('id') id: string,
-        @CurrentUser('distributor') distributor: any,
-        @Body()
-        body: {
-            name?: string;
-            logo?: string;
-        },
-    ) {
-        return this.brandService.updateBrand(id, distributor.id, body);
-    }
+  @Put(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.DISTRIBUTOR)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Brendni tahrirlash' })
+  updateBrand(
+    @Param('id') id: string,
+    @CurrentUser('distributor') distributor: any,
+    @Body()
+    body: {
+      name?: string;
+      logo?: string;
+    },
+  ) {
+    return this.brandService.updateBrand(id, distributor.id, body);
+  }
 
-    @Delete(':id')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(Role.DISTRIBUTOR)
-    @ApiBearerAuth()
-    @ApiOperation({ summary: 'Brendni o\'chirish' })
-    deleteBrand(
-        @Param('id') id: string,
-        @CurrentUser('distributor') distributor: any,
-    ) {
-        return this.brandService.deleteBrand(id, distributor.id);
-    }
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.DISTRIBUTOR)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Brendni o'chirish" })
+  deleteBrand(@Param('id') id: string, @CurrentUser('distributor') distributor: any) {
+    return this.brandService.deleteBrand(id, distributor.id);
+  }
 }

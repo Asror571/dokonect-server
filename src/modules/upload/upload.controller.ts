@@ -1,12 +1,12 @@
 import {
-    Controller,
-    Post,
-    Delete,
-    Body,
-    UseInterceptors,
-    UploadedFile,
-    UploadedFiles,
-    UseGuards,
+  Controller,
+  Post,
+  Delete,
+  Body,
+  UseInterceptors,
+  UploadedFile,
+  UploadedFiles,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
@@ -18,33 +18,27 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class UploadController {
-    constructor(private uploadService: UploadService) { }
+  constructor(private uploadService: UploadService) {}
 
-    @Post('single')
-    @ApiOperation({ summary: 'Bitta rasm yuklash' })
-    @ApiConsumes('multipart/form-data')
-    @UseInterceptors(FileInterceptor('file'))
-    uploadSingle(
-        @UploadedFile() file: Express.Multer.File,
-        @Body('folder') folder?: string,
-    ) {
-        return this.uploadService.uploadSingle(file, folder);
-    }
+  @Post('single')
+  @ApiOperation({ summary: 'Bitta rasm yuklash' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('file'))
+  uploadSingle(@UploadedFile() file: Express.Multer.File, @Body('folder') folder?: string) {
+    return this.uploadService.uploadSingle(file, folder);
+  }
 
-    @Post('multiple')
-    @ApiOperation({ summary: 'Ko\'p rasm yuklash' })
-    @ApiConsumes('multipart/form-data')
-    @UseInterceptors(FilesInterceptor('files', 10))
-    uploadMultiple(
-        @UploadedFiles() files: Express.Multer.File[],
-        @Body('folder') folder?: string,
-    ) {
-        return this.uploadService.uploadMultiple(files, folder);
-    }
+  @Post('multiple')
+  @ApiOperation({ summary: "Ko'p rasm yuklash" })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FilesInterceptor('files', 10))
+  uploadMultiple(@UploadedFiles() files: Express.Multer.File[], @Body('folder') folder?: string) {
+    return this.uploadService.uploadMultiple(files, folder);
+  }
 
-    @Delete()
-    @ApiOperation({ summary: 'Rasmni o\'chirish' })
-    deleteImage(@Body('publicId') publicId: string) {
-        return this.uploadService.deleteImage(publicId);
-    }
+  @Delete()
+  @ApiOperation({ summary: "Rasmni o'chirish" })
+  deleteImage(@Body('publicId') publicId: string) {
+    return this.uploadService.deleteImage(publicId);
+  }
 }

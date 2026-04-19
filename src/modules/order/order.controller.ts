@@ -13,50 +13,41 @@ import { Role, OrderStatus } from '@prisma/client';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class OrderController {
-    constructor(private orderService: OrderService) { }
+  constructor(private orderService: OrderService) {}
 
-    @Post()
-    @UseGuards(RolesGuard)
-    @Roles(Role.CLIENT)
-    @ApiOperation({ summary: 'Buyurtma berish (Client)' })
-    create(
-        @CurrentUser('client') client: any,
-        @Body() dto: CreateOrderDto,
-    ) {
-        return this.orderService.create(client.id, dto);
-    }
+  @Post()
+  @UseGuards(RolesGuard)
+  @Roles(Role.CLIENT)
+  @ApiOperation({ summary: 'Buyurtma berish (Client)' })
+  create(@CurrentUser('client') client: any, @Body() dto: CreateOrderDto) {
+    return this.orderService.create(client.id, dto);
+  }
 
-    @Get()
-    @ApiOperation({ summary: 'O\'z buyurtmalarim' })
-    findAll(
-        @CurrentUser() user: any,
-        @Query('status') status?: OrderStatus,
-    ) {
-        if (user.role === Role.CLIENT) {
-            return this.orderService.findAllForClient(user.client.id, status);
-        } else if (user.role === Role.DISTRIBUTOR) {
-            return this.orderService.findAllForDistributor(user.distributor.id, status);
-        }
+  @Get()
+  @ApiOperation({ summary: "O'z buyurtmalarim" })
+  findAll(@CurrentUser() user: any, @Query('status') status?: OrderStatus) {
+    if (user.role === Role.CLIENT) {
+      return this.orderService.findAllForClient(user.client.id, status);
+    } else if (user.role === Role.DISTRIBUTOR) {
+      return this.orderService.findAllForDistributor(user.distributor.id, status);
     }
+  }
 
-    @Get(':id')
-    @ApiOperation({ summary: 'Buyurtma tafsiloti' })
-    findOne(
-        @Param('id') id: string,
-        @CurrentUser() user: any,
-    ) {
-        return this.orderService.findOne(id, user.id, user.role);
-    }
+  @Get(':id')
+  @ApiOperation({ summary: 'Buyurtma tafsiloti' })
+  findOne(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.orderService.findOne(id, user.id, user.role);
+  }
 
-    @Patch(':id/status')
-    @UseGuards(RolesGuard)
-    @Roles(Role.DISTRIBUTOR)
-    @ApiOperation({ summary: 'Buyurtma statusini o\'zgartirish (Distributor)' })
-    updateStatus(
-        @Param('id') id: string,
-        @CurrentUser('distributor') distributor: any,
-        @Body() dto: UpdateOrderStatusDto,
-    ) {
-        return this.orderService.updateStatus(id, distributor.id, dto);
-    }
+  @Patch(':id/status')
+  @UseGuards(RolesGuard)
+  @Roles(Role.DISTRIBUTOR)
+  @ApiOperation({ summary: "Buyurtma statusini o'zgartirish (Distributor)" })
+  updateStatus(
+    @Param('id') id: string,
+    @CurrentUser('distributor') distributor: any,
+    @Body() dto: UpdateOrderStatusDto,
+  ) {
+    return this.orderService.updateStatus(id, distributor.id, dto);
+  }
 }

@@ -24,36 +24,36 @@ import { BulkUploadModule } from './modules/bulk-upload/bulk-upload.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 @Module({
-    imports: [
-        ConfigModule.forRoot({
-            isGlobal: true,
-        }),
-        PrismaModule,
-        AuthModule,
-        UserModule,
-        ProductModule,
-        OrderModule,
-        DistributorModule,
-        ClientModule,
-        DriverModule,
-        AdminModule,
-        ChatModule,
-        NotificationModule,
-        DebtModule,
-        ReviewModule,
-        AnalyticsModule,
-        CloudinaryModule,
-        InventoryModule,
-        PricingModule,
-        CategoryModule,
-        UploadModule,
-        BulkUploadModule,
-    ],
-    providers: [
-        {
-            provide: APP_FILTER,
-            useClass: AllExceptionsFilter,
-        },
-    ],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    PrismaModule,
+    AuthModule,
+    UserModule,
+    ProductModule,
+    OrderModule,
+    DistributorModule,
+    ClientModule,
+    DriverModule,
+    AdminModule,
+    ChatModule,
+    NotificationModule,
+    DebtModule,
+    ReviewModule,
+    AnalyticsModule,
+    CloudinaryModule,
+    InventoryModule,
+    PricingModule,
+    CategoryModule,
+    UploadModule,
+    BulkUploadModule,
+  ],
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionsFilter,
+    },
+  ],
 })
-export class AppModule { }
+export class AppModule {}

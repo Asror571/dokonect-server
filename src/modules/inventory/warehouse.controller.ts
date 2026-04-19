@@ -13,61 +13,55 @@ import { Role } from '@prisma/client';
 @Roles(Role.DISTRIBUTOR)
 @ApiBearerAuth()
 export class WarehouseController {
-    constructor(private warehouseService: WarehouseService) { }
+  constructor(private warehouseService: WarehouseService) {}
 
-    @Get()
-    @ApiOperation({ summary: 'Omborlar ro\'yxati' })
-    getWarehouses(@CurrentUser('distributor') distributor: any) {
-        return this.warehouseService.getWarehouses(distributor.id);
-    }
+  @Get()
+  @ApiOperation({ summary: "Omborlar ro'yxati" })
+  getWarehouses(@CurrentUser('distributor') distributor: any) {
+    return this.warehouseService.getWarehouses(distributor.id);
+  }
 
-    @Get(':id')
-    @ApiOperation({ summary: 'Ombor tafsiloti' })
-    getWarehouse(
-        @Param('id') id: string,
-        @CurrentUser('distributor') distributor: any,
-    ) {
-        return this.warehouseService.getWarehouse(id, distributor.id);
-    }
+  @Get(':id')
+  @ApiOperation({ summary: 'Ombor tafsiloti' })
+  getWarehouse(@Param('id') id: string, @CurrentUser('distributor') distributor: any) {
+    return this.warehouseService.getWarehouse(id, distributor.id);
+  }
 
-    @Post()
-    @ApiOperation({ summary: 'Yangi ombor yaratish' })
-    createWarehouse(
-        @CurrentUser('distributor') distributor: any,
-        @Body()
-        body: {
-            name: string;
-            address: string;
-            region: string;
-            managerId?: string;
-        },
-    ) {
-        return this.warehouseService.createWarehouse(distributor.id, body);
-    }
+  @Post()
+  @ApiOperation({ summary: 'Yangi ombor yaratish' })
+  createWarehouse(
+    @CurrentUser('distributor') distributor: any,
+    @Body()
+    body: {
+      name: string;
+      address: string;
+      region: string;
+      managerId?: string;
+    },
+  ) {
+    return this.warehouseService.createWarehouse(distributor.id, body);
+  }
 
-    @Put(':id')
-    @ApiOperation({ summary: 'Omborni tahrirlash' })
-    updateWarehouse(
-        @Param('id') id: string,
-        @CurrentUser('distributor') distributor: any,
-        @Body()
-        body: {
-            name?: string;
-            address?: string;
-            region?: string;
-            managerId?: string;
-            isActive?: boolean;
-        },
-    ) {
-        return this.warehouseService.updateWarehouse(id, distributor.id, body);
-    }
+  @Put(':id')
+  @ApiOperation({ summary: 'Omborni tahrirlash' })
+  updateWarehouse(
+    @Param('id') id: string,
+    @CurrentUser('distributor') distributor: any,
+    @Body()
+    body: {
+      name?: string;
+      address?: string;
+      region?: string;
+      managerId?: string;
+      isActive?: boolean;
+    },
+  ) {
+    return this.warehouseService.updateWarehouse(id, distributor.id, body);
+  }
 
-    @Delete(':id')
-    @ApiOperation({ summary: 'Omborni o\'chirish' })
-    deleteWarehouse(
-        @Param('id') id: string,
-        @CurrentUser('distributor') distributor: any,
-    ) {
-        return this.warehouseService.deleteWarehouse(id, distributor.id);
-    }
+  @Delete(':id')
+  @ApiOperation({ summary: "Omborni o'chirish" })
+  deleteWarehouse(@Param('id') id: string, @CurrentUser('distributor') distributor: any) {
+    return this.warehouseService.deleteWarehouse(id, distributor.id);
+  }
 }

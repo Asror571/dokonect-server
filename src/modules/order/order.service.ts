@@ -5,256 +5,252 @@ import { OrderStatus } from '@prisma/client';
 
 @Injectable()
 export class OrderService {
-    constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
-    async create(clientId: string, dto: CreateOrderDto) {
-        // Validate products exist and calculate totals
-        let subtotal = 0;
-        const orderItems = [];
+  async create(clientId: string, dto: CreateOrderDto) {
+    // Validate products exist and calculate totals
+    let subtotal = 0;
+    const orderItems = [];
 
-        for (const item of dto.items) {
-            const product = await this.prisma.product.findUnique({
-                where: { id: item.productId },
-            });
+    for (const item of dto.items) {
+      const product = await this.prisma.product.findUnique({
+        where: { id: item.productId },
+      });
 
-            if (!product) {
-                throw new NotFoundException(`Mahsulot topilmadi: ${item.productId}`);
-            }
+      if (!product) {
+        throw new NotFoundException(`Mahsulot topilmadi: ${item.productId}`);
+      }
 
-            const itemTotal = product.wholesalePrice * item.quantity;
-            subtotal += itemTotal;
+      const itemTotal = product.wholesalePrice * item.quantity;
+      subtotal += itemTotal;
 
-            orderItems.push({
-                productId: item.productId,
-                variantId: item.variantId,
-                quantity: item.quantity,
-                unitPrice: product.wholesalePrice,
-                total: itemTotal,
-            });
-        }
-
-        const totalAmount = subtotal + (dto.deliveryFee || 0) - (dto.discount || 0);
-
-        const order = await this.prisma.order.create({
-            data: {
-                clientId,
-                distributorId: dto.distributorId,
-                subtotal,
-                deliveryFee: dto.deliveryFee || 0,
-                discount: dto.discount || 0,
-                totalAmount,
-                deliveryAddress: dto.deliveryAddress,
-                deliveryTimeSlot: dto.deliveryTimeSlot,
-                notes: dto.notes,
-                paymentMethod: dto.paymentMethod,
-                items: {
-                    create: orderItems,
-                },
-                statusHistory: {
-                    create: {
-                        status: OrderStatus.NEW,
-                        note: 'Buyurtma yaratildi',
-                    },
-                },
-            },
-            include: {
-                items: {
-                    include: {
-                        product: {
-                            include: {
-                                images: true,
-                            },
-                        },
-                        variant: true,
-                    },
-                },
-                distributor: {
-                    select: {
-                        id: true,
-                        companyName: true,
-                        phone: true,
-                        address: true,
-                    },
-                },
-            },
-        });
-
-        // Create debt if payment method is CREDIT
-        if (dto.paymentMethod === 'CREDIT') {
-            await this.prisma.debt.create({
-                data: {
-                    orderId: order.id,
-                    clientId,
-                    distributorId: dto.distributorId,
-                    originalAmount: totalAmount,
-                    remainingAmount: totalAmount,
-                    dueDate: dto.dueDate,
-                },
-            });
-        }
-
-        return order;
+      orderItems.push({
+        productId: item.productId,
+        variantId: item.variantId,
+        quantity: item.quantity,
+        unitPrice: product.wholesalePrice,
+        total: itemTotal,
+      });
     }
 
-    async findAllForClient(clientId: string, status?: OrderStatus) {
-        const where: any = { clientId };
-        if (status) {
-            where.status = status;
-        }
+    const totalAmount = subtotal + (dto.deliveryFee || 0) - (dto.discount || 0);
 
-        return this.prisma.order.findMany({
-            where,
-            include: {
-                items: {
-                    include: {
-                        product: {
-                            select: {
-                                name: true,
-                                images: true,
-                            },
-                        },
-                    },
-                },
-                distributor: {
-                    select: {
-                        companyName: true,
-                        phone: true,
-                    },
-                },
+    const order = await this.prisma.order.create({
+      data: {
+        clientId,
+        distributorId: dto.distributorId,
+        subtotal,
+        deliveryFee: dto.deliveryFee || 0,
+        discount: dto.discount || 0,
+        totalAmount,
+        deliveryAddress: dto.deliveryAddress,
+        deliveryTimeSlot: dto.deliveryTimeSlot,
+        notes: dto.notes,
+        paymentMethod: dto.paymentMethod,
+        items: {
+          create: orderItems,
+        },
+        statusHistory: {
+          create: {
+            status: OrderStatus.NEW,
+            note: 'Buyurtma yaratildi',
+          },
+        },
+      },
+      include: {
+        items: {
+          include: {
+            product: {
+              include: {
+                images: true,
+              },
             },
-            orderBy: { createdAt: 'desc' },
-        });
+            variant: true,
+          },
+        },
+        distributor: {
+          select: {
+            id: true,
+            companyName: true,
+            phone: true,
+            address: true,
+          },
+        },
+      },
+    });
+
+    // Create debt if payment method is CREDIT
+    if (dto.paymentMethod === 'CREDIT') {
+      await this.prisma.debt.create({
+        data: {
+          orderId: order.id,
+          clientId,
+          distributorId: dto.distributorId,
+          originalAmount: totalAmount,
+          remainingAmount: totalAmount,
+          dueDate: dto.dueDate,
+        },
+      });
     }
 
-    async findAllForDistributor(distributorId: string, status?: OrderStatus) {
-        const where: any = { distributorId };
-        if (status) {
-            where.status = status;
-        }
+    return order;
+  }
 
-        return this.prisma.order.findMany({
-            where,
-            include: {
-                items: {
-                    include: {
-                        product: {
-                            select: {
-                                name: true,
-                                images: true,
-                            },
-                        },
-                    },
-                },
-                client: {
-                    include: {
-                        user: {
-                            select: {
-                                name: true,
-                                phone: true,
-                            },
-                        },
-                    },
-                },
-            },
-            orderBy: { createdAt: 'desc' },
-        });
+  async findAllForClient(clientId: string, status?: OrderStatus) {
+    const where: any = { clientId };
+    if (status) {
+      where.status = status;
     }
 
-    async findOne(id: string, userId: string, role: string) {
-        const order = await this.prisma.order.findUnique({
-            where: { id },
-            include: {
-                items: {
-                    include: {
-                        product: {
-                            include: {
-                                images: true,
-                            },
-                        },
-                        variant: true,
-                    },
-                },
-                client: {
-                    include: {
-                        user: {
-                            select: {
-                                name: true,
-                                phone: true,
-                            },
-                        },
-                    },
-                },
-                distributor: {
-                    select: {
-                        companyName: true,
-                        phone: true,
-                        address: true,
-                    },
-                },
-                driver: {
-                    include: {
-                        user: {
-                            select: {
-                                name: true,
-                                phone: true,
-                            },
-                        },
-                    },
-                },
-                statusHistory: {
-                    orderBy: { timestamp: 'desc' },
-                },
-                delivery: true,
+    return this.prisma.order.findMany({
+      where,
+      include: {
+        items: {
+          include: {
+            product: {
+              select: {
+                name: true,
+                images: true,
+              },
             },
-        });
+          },
+        },
+        distributor: {
+          select: {
+            companyName: true,
+            phone: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 
-        if (!order) {
-            throw new NotFoundException('Buyurtma topilmadi');
-        }
-
-        // Check access rights
-        if (role === 'CLIENT' && order.client.userId !== userId) {
-            throw new BadRequestException('Ruxsat yo\'q');
-        }
-        // Distributor check skipped (userId not in select)
-
-        return order;
+  async findAllForDistributor(distributorId: string, status?: OrderStatus) {
+    const where: any = { distributorId };
+    if (status) {
+      where.status = status;
     }
 
-    async updateStatus(
-        id: string,
-        distributorId: string,
-        dto: UpdateOrderStatusDto,
-    ) {
-        const order = await this.prisma.order.findFirst({
-            where: { id, distributorId },
-        });
-
-        if (!order) {
-            throw new NotFoundException('Buyurtma topilmadi');
-        }
-
-        const updatedOrder = await this.prisma.order.update({
-            where: { id },
-            data: {
-                status: dto.status,
-                rejectionReason: dto.rejectionReason,
-                statusHistory: {
-                    create: {
-                        status: dto.status,
-                        note: dto.note,
-                    },
-                },
+    return this.prisma.order.findMany({
+      where,
+      include: {
+        items: {
+          include: {
+            product: {
+              select: {
+                name: true,
+                images: true,
+              },
             },
-            include: {
-                items: {
-                    include: {
-                        product: true,
-                    },
-                },
+          },
+        },
+        client: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                phone: true,
+              },
             },
-        });
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 
-        return updatedOrder;
+  async findOne(id: string, userId: string, role: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+      include: {
+        items: {
+          include: {
+            product: {
+              include: {
+                images: true,
+              },
+            },
+            variant: true,
+          },
+        },
+        client: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                phone: true,
+              },
+            },
+          },
+        },
+        distributor: {
+          select: {
+            companyName: true,
+            phone: true,
+            address: true,
+          },
+        },
+        driver: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                phone: true,
+              },
+            },
+          },
+        },
+        statusHistory: {
+          orderBy: { timestamp: 'desc' },
+        },
+        delivery: true,
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Buyurtma topilmadi');
     }
+
+    // Check access rights
+    if (role === 'CLIENT' && order.client.userId !== userId) {
+      throw new BadRequestException("Ruxsat yo'q");
+    }
+    // Distributor check skipped (userId not in select)
+
+    return order;
+  }
+
+  async updateStatus(id: string, distributorId: string, dto: UpdateOrderStatusDto) {
+    const order = await this.prisma.order.findFirst({
+      where: { id, distributorId },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Buyurtma topilmadi');
+    }
+
+    const updatedOrder = await this.prisma.order.update({
+      where: { id },
+      data: {
+        status: dto.status,
+        rejectionReason: dto.rejectionReason,
+        statusHistory: {
+          create: {
+            status: dto.status,
+            note: dto.note,
+          },
+        },
+      },
+      include: {
+        items: {
+          include: {
+            product: true,
+          },
+        },
+      },
+    });
+
+    return updatedOrder;
+  }
 }

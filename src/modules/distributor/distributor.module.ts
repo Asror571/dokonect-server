@@ -3,8 +3,8 @@ import { DistributorController } from './distributor.controller';
 import { DistributorService } from './distributor.service';
 
 @Module({
-    controllers: [DistributorController],
-    providers: [DistributorService],
-    exports: [DistributorService],
+  controllers: [DistributorController],
+  providers: [DistributorService],
+  exports: [DistributorService],
 })
-export class DistributorModule { }
+export class DistributorModule {}

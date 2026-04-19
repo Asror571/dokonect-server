@@ -13,69 +13,58 @@ import { Role } from '@prisma/client';
 @Roles(Role.DRIVER)
 @ApiBearerAuth()
 export class DriverController {
-    constructor(private driverService: DriverService) { }
+  constructor(private driverService: DriverService) {}
 
-    @Get('dashboard')
-    @ApiOperation({ summary: 'Driver dashboard' })
-    getDashboard(@CurrentUser('driver') driver: any) {
-        return this.driverService.getDashboard(driver.id);
-    }
+  @Get('dashboard')
+  @ApiOperation({ summary: 'Driver dashboard' })
+  getDashboard(@CurrentUser('driver') driver: any) {
+    return this.driverService.getDashboard(driver.id);
+  }
 
-    @Post('location')
-    @ApiOperation({ summary: 'Lokatsiyani yangilash' })
-    updateLocation(
-        @CurrentUser('driver') driver: any,
-        @Body() body: { lat: number; lng: number },
-    ) {
-        return this.driverService.updateLocation(driver.id, body.lat, body.lng);
-    }
+  @Post('location')
+  @ApiOperation({ summary: 'Lokatsiyani yangilash' })
+  updateLocation(@CurrentUser('driver') driver: any, @Body() body: { lat: number; lng: number }) {
+    return this.driverService.updateLocation(driver.id, body.lat, body.lng);
+  }
 
-    @Patch('status')
-    @ApiOperation({ summary: 'Online/offline status' })
-    updateStatus(
-        @CurrentUser('driver') driver: any,
-        @Body('isOnline') isOnline: boolean,
-    ) {
-        return this.driverService.updateStatus(driver.id, isOnline);
-    }
+  @Patch('status')
+  @ApiOperation({ summary: 'Online/offline status' })
+  updateStatus(@CurrentUser('driver') driver: any, @Body('isOnline') isOnline: boolean) {
+    return this.driverService.updateStatus(driver.id, isOnline);
+  }
 
-    @Post('orders/:orderId/accept')
-    @ApiOperation({ summary: 'Buyurtmani qabul qilish' })
-    acceptOrder(
-        @Param('orderId') orderId: string,
-        @CurrentUser('driver') driver: any,
-    ) {
-        return this.driverService.acceptOrder(driver.id, orderId);
-    }
+  @Post('orders/:orderId/accept')
+  @ApiOperation({ summary: 'Buyurtmani qabul qilish' })
+  acceptOrder(@Param('orderId') orderId: string, @CurrentUser('driver') driver: any) {
+    return this.driverService.acceptOrder(driver.id, orderId);
+  }
 
-    @Patch('orders/:orderId/status')
-    @ApiOperation({ summary: 'Buyurtma statusini yangilash' })
-    updateOrderStatus(
-        @Param('orderId') orderId: string,
-        @CurrentUser('driver') driver: any,
-        @Body() body: {
-            status: string;
-            photoProof?: string;
-            signature?: string;
-            problemReport?: string;
-        },
-    ) {
-        return this.driverService.updateOrderStatus(
-            orderId,
-            driver.id,
-            body.status,
-            body.photoProof,
-            body.signature,
-            body.problemReport,
-        );
-    }
+  @Patch('orders/:orderId/status')
+  @ApiOperation({ summary: 'Buyurtma statusini yangilash' })
+  updateOrderStatus(
+    @Param('orderId') orderId: string,
+    @CurrentUser('driver') driver: any,
+    @Body()
+    body: {
+      status: string;
+      photoProof?: string;
+      signature?: string;
+      problemReport?: string;
+    },
+  ) {
+    return this.driverService.updateOrderStatus(
+      orderId,
+      driver.id,
+      body.status,
+      body.photoProof,
+      body.signature,
+      body.problemReport,
+    );
+  }
 
-    @Get('earnings')
-    @ApiOperation({ summary: 'Daromad tarixi' })
-    getEarnings(
-        @CurrentUser('driver') driver: any,
-        @Query('period') period?: string,
-    ) {
-        return this.driverService.getEarnings(driver.id, period);
-    }
+  @Get('earnings')
+  @ApiOperation({ summary: 'Daromad tarixi' })
+  getEarnings(@CurrentUser('driver') driver: any, @Query('period') period?: string) {
+    return this.driverService.getEarnings(driver.id, period);
+  }
 }

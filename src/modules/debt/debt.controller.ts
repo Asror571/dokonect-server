@@ -12,38 +12,35 @@ import { Role } from '@prisma/client';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class DebtController {
-    constructor(private debtService: DebtService) { }
+  constructor(private debtService: DebtService) {}
 
-    @Get('client')
-    @UseGuards(RolesGuard)
-    @Roles(Role.CLIENT)
-    @ApiOperation({ summary: 'Client qarzlari' })
-    getClientDebts(@CurrentUser('client') client: any) {
-        return this.debtService.getClientDebts(client.id);
-    }
+  @Get('client')
+  @UseGuards(RolesGuard)
+  @Roles(Role.CLIENT)
+  @ApiOperation({ summary: 'Client qarzlari' })
+  getClientDebts(@CurrentUser('client') client: any) {
+    return this.debtService.getClientDebts(client.id);
+  }
 
-    @Get('distributor')
-    @UseGuards(RolesGuard)
-    @Roles(Role.DISTRIBUTOR)
-    @ApiOperation({ summary: 'Distributor qarzlari' })
-    getDistributorDebts(@CurrentUser('distributor') distributor: any) {
-        return this.debtService.getDistributorDebts(distributor.id);
-    }
+  @Get('distributor')
+  @UseGuards(RolesGuard)
+  @Roles(Role.DISTRIBUTOR)
+  @ApiOperation({ summary: 'Distributor qarzlari' })
+  getDistributorDebts(@CurrentUser('distributor') distributor: any) {
+    return this.debtService.getDistributorDebts(distributor.id);
+  }
 
-    @Post(':debtId/pay')
-    @ApiOperation({ summary: 'Qarzni to\'lash' })
-    payDebt(
-        @Param('debtId') debtId: string,
-        @Body('amount') amount: number,
-    ) {
-        return this.debtService.payDebt(debtId, amount);
-    }
+  @Post(':debtId/pay')
+  @ApiOperation({ summary: "Qarzni to'lash" })
+  payDebt(@Param('debtId') debtId: string, @Body('amount') amount: number) {
+    return this.debtService.payDebt(debtId, amount);
+  }
 
-    @Get('summary')
-    @UseGuards(RolesGuard)
-    @Roles(Role.CLIENT)
-    @ApiOperation({ summary: 'Qarz xulosasi' })
-    getDebtSummary(@CurrentUser('client') client: any) {
-        return this.debtService.getDebtSummary(client.id);
-    }
+  @Get('summary')
+  @UseGuards(RolesGuard)
+  @Roles(Role.CLIENT)
+  @ApiOperation({ summary: 'Qarz xulosasi' })
+  getDebtSummary(@CurrentUser('client') client: any) {
+    return this.debtService.getDebtSummary(client.id);
+  }
 }

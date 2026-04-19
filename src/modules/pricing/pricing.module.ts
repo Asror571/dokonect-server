@@ -5,8 +5,8 @@ import { PromoCodeController } from './promo-code.controller';
 import { PromoCodeService } from './promo-code.service';
 
 @Module({
-    controllers: [PricingController, PromoCodeController],
-    providers: [PricingService, PromoCodeService],
-    exports: [PricingService, PromoCodeService],
+  controllers: [PricingController, PromoCodeController],
+  providers: [PricingService, PromoCodeService],
+  exports: [PricingService, PromoCodeService],
 })
-export class PricingModule { }
+export class PricingModule {}

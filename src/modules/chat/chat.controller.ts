@@ -9,15 +9,15 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class ChatController {
-    constructor(private chatService: ChatService) { }
+  constructor(private chatService: ChatService) {}
 
-    @Get('rooms')
-    getChatRooms(@CurrentUser() user: any) {
-        return this.chatService.getChatRooms(user.id, user.role);
-    }
+  @Get('rooms')
+  getChatRooms(@CurrentUser() user: any) {
+    return this.chatService.getChatRooms(user.id, user.role);
+  }
 
-    @Get('rooms/:roomId/messages')
-    getMessages(@Param('roomId') roomId: string) {
-        return this.chatService.getMessages(roomId);
-    }
+  @Get('rooms/:roomId/messages')
+  getMessages(@Param('roomId') roomId: string) {
+    return this.chatService.getMessages(roomId);
+  }
 }

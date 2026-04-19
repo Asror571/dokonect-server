@@ -3,106 +3,106 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class WarehouseService {
-    constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
-    async getWarehouses(distributorId: string) {
-        return this.prisma.warehouse.findMany({
-            where: { distributorId },
-            include: {
-                _count: {
-                    select: { inventory: true },
-                },
-            },
-            orderBy: { createdAt: 'desc' },
-        });
-    }
-
-    async getWarehouse(id: string, distributorId: string) {
-        const warehouse = await this.prisma.warehouse.findFirst({
-            where: { id, distributorId },
-            include: {
-                inventory: {
-                    include: {
-                        product: true,
-                        variant: true,
-                    },
-                },
-            },
-        });
-
-        if (!warehouse) {
-            throw new NotFoundException('Ombor topilmadi');
-        }
-
-        return warehouse;
-    }
-
-    async createWarehouse(
-        distributorId: string,
-        data: {
-            name: string;
-            address: string;
-            region: string;
-            managerId?: string;
+  async getWarehouses(distributorId: string) {
+    return this.prisma.warehouse.findMany({
+      where: { distributorId },
+      include: {
+        _count: {
+          select: { inventory: true },
         },
-    ) {
-        return this.prisma.warehouse.create({
-            data: {
-                ...data,
-                distributorId,
-            },
-        });
-    }
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 
-    async updateWarehouse(
-        id: string,
-        distributorId: string,
-        data: {
-            name?: string;
-            address?: string;
-            region?: string;
-            managerId?: string;
-            isActive?: boolean;
+  async getWarehouse(id: string, distributorId: string) {
+    const warehouse = await this.prisma.warehouse.findFirst({
+      where: { id, distributorId },
+      include: {
+        inventory: {
+          include: {
+            product: true,
+            variant: true,
+          },
         },
-    ) {
-        const warehouse = await this.prisma.warehouse.findFirst({
-            where: { id, distributorId },
-        });
+      },
+    });
 
-        if (!warehouse) {
-            throw new NotFoundException('Ombor topilmadi');
-        }
-
-        return this.prisma.warehouse.update({
-            where: { id },
-            data,
-        });
+    if (!warehouse) {
+      throw new NotFoundException('Ombor topilmadi');
     }
 
-    async deleteWarehouse(id: string, distributorId: string) {
-        const warehouse = await this.prisma.warehouse.findFirst({
-            where: { id, distributorId },
-            include: {
-                _count: {
-                    select: { inventory: true },
-                },
-            },
-        });
+    return warehouse;
+  }
 
-        if (!warehouse) {
-            throw new NotFoundException('Ombor topilmadi');
-        }
+  async createWarehouse(
+    distributorId: string,
+    data: {
+      name: string;
+      address: string;
+      region: string;
+      managerId?: string;
+    },
+  ) {
+    return this.prisma.warehouse.create({
+      data: {
+        ...data,
+        distributorId,
+      },
+    });
+  }
 
-        if (warehouse._count.inventory > 0) {
-            // Soft delete
-            return this.prisma.warehouse.update({
-                where: { id },
-                data: { isActive: false },
-            });
-        }
+  async updateWarehouse(
+    id: string,
+    distributorId: string,
+    data: {
+      name?: string;
+      address?: string;
+      region?: string;
+      managerId?: string;
+      isActive?: boolean;
+    },
+  ) {
+    const warehouse = await this.prisma.warehouse.findFirst({
+      where: { id, distributorId },
+    });
 
-        return this.prisma.warehouse.delete({
-            where: { id },
-        });
+    if (!warehouse) {
+      throw new NotFoundException('Ombor topilmadi');
     }
+
+    return this.prisma.warehouse.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async deleteWarehouse(id: string, distributorId: string) {
+    const warehouse = await this.prisma.warehouse.findFirst({
+      where: { id, distributorId },
+      include: {
+        _count: {
+          select: { inventory: true },
+        },
+      },
+    });
+
+    if (!warehouse) {
+      throw new NotFoundException('Ombor topilmadi');
+    }
+
+    if (warehouse._count.inventory > 0) {
+      // Soft delete
+      return this.prisma.warehouse.update({
+        where: { id },
+        data: { isActive: false },
+      });
+    }
+
+    return this.prisma.warehouse.delete({
+      where: { id },
+    });
+  }
 }

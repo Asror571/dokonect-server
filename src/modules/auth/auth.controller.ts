@@ -8,25 +8,25 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-    constructor(private authService: AuthService) { }
+  constructor(private authService: AuthService) {}
 
-    @Post('register')
-    @ApiOperation({ summary: 'Ro\'yxatdan o\'tish' })
-    register(@Body() dto: RegisterDto) {
-        return this.authService.register(dto);
-    }
+  @Post('register')
+  @ApiOperation({ summary: "Ro'yxatdan o'tish" })
+  register(@Body() dto: RegisterDto) {
+    return this.authService.register(dto);
+  }
 
-    @Post('login')
-    @ApiOperation({ summary: 'Tizimga kirish' })
-    login(@Body() dto: LoginDto) {
-        return this.authService.login(dto);
-    }
+  @Post('login')
+  @ApiOperation({ summary: 'Tizimga kirish' })
+  login(@Body() dto: LoginDto) {
+    return this.authService.login(dto);
+  }
 
-    @Get('me')
-    @UseGuards(JwtAuthGuard)
-    @ApiBearerAuth()
-    @ApiOperation({ summary: 'Joriy foydalanuvchi ma\'lumotlari' })
-    getMe(@CurrentUser('id') userId: string) {
-        return this.authService.getMe(userId);
-    }
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Joriy foydalanuvchi ma'lumotlari" })
+  getMe(@CurrentUser('id') userId: string) {
+    return this.authService.getMe(userId);
+  }
 }

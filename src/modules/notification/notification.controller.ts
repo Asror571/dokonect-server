@@ -9,29 +9,29 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class NotificationController {
-    constructor(private notificationService: NotificationService) { }
+  constructor(private notificationService: NotificationService) {}
 
-    @Get()
-    @ApiOperation({ summary: 'Bildirishnomalar ro\'yxati' })
-    getUserNotifications(@CurrentUser('id') userId: string) {
-        return this.notificationService.getUserNotifications(userId);
-    }
+  @Get()
+  @ApiOperation({ summary: "Bildirishnomalar ro'yxati" })
+  getUserNotifications(@CurrentUser('id') userId: string) {
+    return this.notificationService.getUserNotifications(userId);
+  }
 
-    @Get('unread-count')
-    @ApiOperation({ summary: 'O\'qilmagan bildirishnomalar soni' })
-    getUnreadCount(@CurrentUser('id') userId: string) {
-        return this.notificationService.getUnreadCount(userId);
-    }
+  @Get('unread-count')
+  @ApiOperation({ summary: "O'qilmagan bildirishnomalar soni" })
+  getUnreadCount(@CurrentUser('id') userId: string) {
+    return this.notificationService.getUnreadCount(userId);
+  }
 
-    @Patch(':id/read')
-    @ApiOperation({ summary: 'Bildirishnomani o\'qilgan deb belgilash' })
-    markAsRead(@Param('id') id: string) {
-        return this.notificationService.markAsRead(id);
-    }
+  @Patch(':id/read')
+  @ApiOperation({ summary: "Bildirishnomani o'qilgan deb belgilash" })
+  markAsRead(@Param('id') id: string) {
+    return this.notificationService.markAsRead(id);
+  }
 
-    @Patch('read-all')
-    @ApiOperation({ summary: 'Barchasini o\'qilgan deb belgilash' })
-    markAllAsRead(@CurrentUser('id') userId: string) {
-        return this.notificationService.markAllAsRead(userId);
-    }
+  @Patch('read-all')
+  @ApiOperation({ summary: "Barchasini o'qilgan deb belgilash" })
+  markAllAsRead(@CurrentUser('id') userId: string) {
+    return this.notificationService.markAllAsRead(userId);
+  }
 }

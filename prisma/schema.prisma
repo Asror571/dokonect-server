@@ -81,6 +81,7 @@ model Distributor {
   storeLinks      StoreDistributorLink[]
   debts           Debt[]
   chatRooms       ChatRoom[]
+  alerts          ProductAlert[]
 }
 
 model Driver {
@@ -135,6 +136,9 @@ model Product {
   variants       ProductVariant[]
   reviews        Review[]
   stockLogs      StockLog[]
+  priceHistory   PriceHistory[]
+  alerts         ProductAlert[]
+  salesVelocity  SalesVelocity?
 }
 
 model ProductImage {
@@ -470,8 +474,47 @@ model StockLog {
   reason        StockReason?
   variantId     String?
   warehouseId   String?
+  changedBy     String?
   distributor   Distributor  @relation(fields: [distributorId], references: [id])
   product       Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model PriceHistory {
+  id            String      @id @default(uuid())
+  productId     String
+  oldPrice      Float
+  newPrice      Float
+  priceType     PriceType
+  changedBy     String
+  reason        String?
+  createdAt     DateTime    @default(now())
+  product       Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model ProductAlert {
+  id            String      @id @default(uuid())
+  productId     String
+  distributorId String
+  alertType     AlertType
+  message       String
+  isRead        Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  product       Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  distributor   Distributor @relation(fields: [distributorId], references: [id], onDelete: Cascade)
+}
+
+model SalesVelocity {
+  id                String   @id @default(uuid())
+  productId         String   @unique
+  last7DaysSales    Int      @default(0)
+  last30DaysSales   Int      @default(0)
+  dailyAverage      Float    @default(0)
+  weeklyAverage     Float    @default(0)
+  monthlyAverage    Float    @default(0)
+  daysUntilStockout Int?
+  status            VelocityStatus @default(MEDIUM)
+  lastCalculated    DateTime @default(now())
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model DriverLocation {
@@ -655,4 +698,25 @@ enum NotifType {
   DRIVER_LOCATION_UPDATE
   PAYMENT_REMINDER
   REVIEW_NEW
+}
+
+enum PriceType {
+  WHOLESALE
+  RETAIL
+  COST
+}
+
+enum AlertType {
+  LOW_STOCK
+  OUT_OF_STOCK
+  SLOW_MOVING
+  FAST_MOVING
+  PRICE_CHANGED
+}
+
+enum VelocityStatus {
+  FAST
+  MEDIUM
+  SLOW
+  DEAD
 }

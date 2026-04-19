@@ -12,25 +12,22 @@ import { Role } from '@prisma/client';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class AnalyticsController {
-    constructor(private analyticsService: AnalyticsService) { }
+  constructor(private analyticsService: AnalyticsService) {}
 
-    @Get('distributor')
-    @Roles(Role.DISTRIBUTOR)
-    @ApiOperation({ summary: 'Distributor analitikasi' })
-    getDistributorAnalytics(
-        @CurrentUser('distributor') distributor: any,
-        @Query('period') period?: string,
-    ) {
-        return this.analyticsService.getDistributorAnalytics(distributor.id, period);
-    }
+  @Get('distributor')
+  @Roles(Role.DISTRIBUTOR)
+  @ApiOperation({ summary: 'Distributor analitikasi' })
+  getDistributorAnalytics(
+    @CurrentUser('distributor') distributor: any,
+    @Query('period') period?: string,
+  ) {
+    return this.analyticsService.getDistributorAnalytics(distributor.id, period);
+  }
 
-    @Get('client')
-    @Roles(Role.CLIENT)
-    @ApiOperation({ summary: 'Client analitikasi' })
-    getClientAnalytics(
-        @CurrentUser('client') client: any,
-        @Query('period') period?: string,
-    ) {
-        return this.analyticsService.getClientAnalytics(client.id, period);
-    }
+  @Get('client')
+  @Roles(Role.CLIENT)
+  @ApiOperation({ summary: 'Client analitikasi' })
+  getClientAnalytics(@CurrentUser('client') client: any, @Query('period') period?: string) {
+    return this.analyticsService.getClientAnalytics(client.id, period);
+  }
 }

@@ -5,8 +5,8 @@ import { WarehouseController } from './warehouse.controller';
 import { WarehouseService } from './warehouse.service';
 
 @Module({
-    controllers: [InventoryController, WarehouseController],
-    providers: [InventoryService, WarehouseService],
-    exports: [InventoryService, WarehouseService],
+  controllers: [InventoryController, WarehouseController],
+  providers: [InventoryService, WarehouseService],
+  exports: [InventoryService, WarehouseService],
 })
-export class InventoryModule { }
+export class InventoryModule {}

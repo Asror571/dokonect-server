@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PromoCodeService } from './promo-code.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -12,77 +12,74 @@ import { Role } from '@prisma/client';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class PromoCodeController {
-    constructor(private promoCodeService: PromoCodeService) { }
+  constructor(private promoCodeService: PromoCodeService) {}
 
-    @Get()
-    @UseGuards(RolesGuard)
-    @Roles(Role.DISTRIBUTOR)
-    @ApiOperation({ summary: 'Promo kodlar ro\'yxati' })
-    getPromoCodes(@CurrentUser('distributor') distributor: any) {
-        return this.promoCodeService.getPromoCodes(distributor.id);
-    }
+  @Get()
+  @UseGuards(RolesGuard)
+  @Roles(Role.DISTRIBUTOR)
+  @ApiOperation({ summary: "Promo kodlar ro'yxati" })
+  getPromoCodes(@CurrentUser('distributor') distributor: any) {
+    return this.promoCodeService.getPromoCodes(distributor.id);
+  }
 
-    @Post()
-    @UseGuards(RolesGuard)
-    @Roles(Role.DISTRIBUTOR)
-    @ApiOperation({ summary: 'Yangi promo kod' })
-    createPromoCode(
-        @CurrentUser('distributor') distributor: any,
-        @Body()
-        body: {
-            code: string;
-            discountType: 'PERCENT' | 'FIXED';
-            discountValue: number;
-            minOrderAmount?: number;
-            maxUses?: number;
-            usesPerClient?: number;
-            validFrom?: Date;
-            validTo?: Date;
-            applicableTo?: any;
-        },
-    ) {
-        return this.promoCodeService.createPromoCode(distributor.id, body);
-    }
+  @Post()
+  @UseGuards(RolesGuard)
+  @Roles(Role.DISTRIBUTOR)
+  @ApiOperation({ summary: 'Yangi promo kod' })
+  createPromoCode(
+    @CurrentUser('distributor') distributor: any,
+    @Body()
+    body: {
+      code: string;
+      discountType: 'PERCENT' | 'FIXED';
+      discountValue: number;
+      minOrderAmount?: number;
+      maxUses?: number;
+      usesPerClient?: number;
+      validFrom?: Date;
+      validTo?: Date;
+      applicableTo?: any;
+    },
+  ) {
+    return this.promoCodeService.createPromoCode(distributor.id, body);
+  }
 
-    @Put(':id')
-    @UseGuards(RolesGuard)
-    @Roles(Role.DISTRIBUTOR)
-    @ApiOperation({ summary: 'Promo kodni tahrirlash' })
-    updatePromoCode(
-        @Param('id') id: string,
-        @CurrentUser('distributor') distributor: any,
-        @Body()
-        body: {
-            discountValue?: number;
-            minOrderAmount?: number;
-            maxUses?: number;
-            usesPerClient?: number;
-            validFrom?: Date;
-            validTo?: Date;
-        },
-    ) {
-        return this.promoCodeService.updatePromoCode(id, distributor.id, body);
-    }
+  @Put(':id')
+  @UseGuards(RolesGuard)
+  @Roles(Role.DISTRIBUTOR)
+  @ApiOperation({ summary: 'Promo kodni tahrirlash' })
+  updatePromoCode(
+    @Param('id') id: string,
+    @CurrentUser('distributor') distributor: any,
+    @Body()
+    body: {
+      discountValue?: number;
+      minOrderAmount?: number;
+      maxUses?: number;
+      usesPerClient?: number;
+      validFrom?: Date;
+      validTo?: Date;
+    },
+  ) {
+    return this.promoCodeService.updatePromoCode(id, distributor.id, body);
+  }
 
-    @Delete(':id')
-    @UseGuards(RolesGuard)
-    @Roles(Role.DISTRIBUTOR)
-    @ApiOperation({ summary: 'Promo kodni o\'chirish' })
-    deletePromoCode(
-        @Param('id') id: string,
-        @CurrentUser('distributor') distributor: any,
-    ) {
-        return this.promoCodeService.deletePromoCode(id, distributor.id);
-    }
+  @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles(Role.DISTRIBUTOR)
+  @ApiOperation({ summary: "Promo kodni o'chirish" })
+  deletePromoCode(@Param('id') id: string, @CurrentUser('distributor') distributor: any) {
+    return this.promoCodeService.deletePromoCode(id, distributor.id);
+  }
 
-    @Post('validate')
-    @UseGuards(RolesGuard)
-    @Roles(Role.CLIENT)
-    @ApiOperation({ summary: 'Promo kodni tekshirish' })
-    validatePromoCode(
-        @CurrentUser('client') client: any,
-        @Body() body: { code: string; orderAmount: number },
-    ) {
-        return this.promoCodeService.validatePromoCode(body.code, client.id, body.orderAmount);
-    }
+  @Post('validate')
+  @UseGuards(RolesGuard)
+  @Roles(Role.CLIENT)
+  @ApiOperation({ summary: 'Promo kodni tekshirish' })
+  validatePromoCode(
+    @CurrentUser('client') client: any,
+    @Body() body: { code: string; orderAmount: number },
+  ) {
+    return this.promoCodeService.validatePromoCode(body.code, client.id, body.orderAmount);
+  }
 }

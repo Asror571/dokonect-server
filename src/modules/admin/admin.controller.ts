@@ -12,44 +12,41 @@ import { Role } from '@prisma/client';
 @Roles(Role.ADMIN)
 @ApiBearerAuth()
 export class AdminController {
-    constructor(private adminService: AdminService) { }
+  constructor(private adminService: AdminService) {}
 
-    @Get('dashboard')
-    @ApiOperation({ summary: 'Admin dashboard statistikasi' })
-    getDashboardStats() {
-        return this.adminService.getDashboardStats();
-    }
+  @Get('dashboard')
+  @ApiOperation({ summary: 'Admin dashboard statistikasi' })
+  getDashboardStats() {
+    return this.adminService.getDashboardStats();
+  }
 
-    @Get('orders')
-    @ApiOperation({ summary: 'Barcha buyurtmalar' })
-    getRecentOrders(@Query('status') status?: string) {
-        return this.adminService.getRecentOrders(status);
-    }
+  @Get('orders')
+  @ApiOperation({ summary: 'Barcha buyurtmalar' })
+  getRecentOrders(@Query('status') status?: string) {
+    return this.adminService.getRecentOrders(status);
+  }
 
-    @Get('drivers/active')
-    @ApiOperation({ summary: 'Faol haydovchilar' })
-    getActiveDrivers() {
-        return this.adminService.getActiveDrivers();
-    }
+  @Get('drivers/active')
+  @ApiOperation({ summary: 'Faol haydovchilar' })
+  getActiveDrivers() {
+    return this.adminService.getActiveDrivers();
+  }
 
-    @Get('users')
-    @ApiOperation({ summary: 'Barcha foydalanuvchilar' })
-    getAllUsers() {
-        return this.adminService.getAllUsers();
-    }
+  @Get('users')
+  @ApiOperation({ summary: 'Barcha foydalanuvchilar' })
+  getAllUsers() {
+    return this.adminService.getAllUsers();
+  }
 
-    @Patch('users/:userId/status')
-    @ApiOperation({ summary: 'Foydalanuvchi statusini o\'zgartirish' })
-    updateUserStatus(
-        @Param('userId') userId: string,
-        @Body('status') status: string,
-    ) {
-        return this.adminService.updateUserStatus(userId, status);
-    }
+  @Patch('users/:userId/status')
+  @ApiOperation({ summary: "Foydalanuvchi statusini o'zgartirish" })
+  updateUserStatus(@Param('userId') userId: string, @Body('status') status: string) {
+    return this.adminService.updateUserStatus(userId, status);
+  }
 
-    @Get('analytics')
-    @ApiOperation({ summary: 'Analitika' })
-    getAnalytics(@Query('period') period?: string) {
-        return this.adminService.getAnalytics(period);
-    }
+  @Get('analytics')
+  @ApiOperation({ summary: 'Analitika' })
+  getAnalytics(@Query('period') period?: string) {
+    return this.adminService.getAnalytics(period);
+  }
 }
