@@ -22,6 +22,7 @@ import { CategoryModule } from './modules/category/category.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { BulkUploadModule } from './modules/bulk-upload/bulk-upload.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+import { HealthController } from './health.controller';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
     UploadModule,
     BulkUploadModule,
   ],
+  controllers: [HealthController],
   providers: [
     {
       provide: APP_FILTER,
@@ -56,4 +58,4 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

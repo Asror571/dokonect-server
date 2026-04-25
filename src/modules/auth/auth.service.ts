@@ -9,7 +9,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
-  ) {}
+  ) { }
 
   async register(dto: RegisterDto) {
     const existingUser = await this.prisma.user.findFirst({
@@ -65,24 +65,34 @@ export class AuthService {
     const token = this.generateToken(user.id, user.role);
 
     return {
-      user: this.sanitizeUser(user),
-      token,
+      success: true,
+      data: {
+        user: this.sanitizeUser(user),
+        accessToken: token,
+        token: token, // backward compatibility
+      },
     };
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { phone: dto.phone },
+    // Email yoki phone orqali foydalanuvchini topish
+    const user = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { phone: dto.phone },
+          { email: dto.email },
+        ],
+      },
     });
 
     if (!user) {
-      throw new UnauthorizedException("Telefon raqam yoki parol noto'g'ri");
+      throw new UnauthorizedException("Telefon/Email yoki parol noto'g'ri");
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException("Telefon raqam yoki parol noto'g'ri");
+      throw new UnauthorizedException("Telefon/Email yoki parol noto'g'ri");
     }
 
     if (user.status !== 'ACTIVE') {
@@ -97,8 +107,12 @@ export class AuthService {
     const token = this.generateToken(user.id, user.role);
 
     return {
-      user: this.sanitizeUser(user),
-      token,
+      success: true,
+      data: {
+        user: this.sanitizeUser(user),
+        accessToken: token,
+        token: token, // backward compatibility
+      },
     };
   }
 
