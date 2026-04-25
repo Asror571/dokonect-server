@@ -12,16 +12,17 @@ import { Role } from '@prisma/client';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class AnalyticsController {
-  constructor(private analyticsService: AnalyticsService) {}
+  constructor(private analyticsService: AnalyticsService) { }
 
   @Get('distributor')
-  @Roles(Role.DISTRIBUTOR)
+  @Roles(Role.DISTRIBUTOR, Role.ADMIN)
   @ApiOperation({ summary: 'Distributor analitikasi' })
   getDistributorAnalytics(
-    @CurrentUser('distributor') distributor: any,
+    @CurrentUser() user: any,
     @Query('period') period?: string,
   ) {
-    return this.analyticsService.getDistributorAnalytics(distributor.id, period);
+    const distributorId = user.distributor?.id || null;
+    return this.analyticsService.getDistributorAnalytics(distributorId, period);
   }
 
   @Get('client')

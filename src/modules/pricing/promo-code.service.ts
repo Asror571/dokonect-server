@@ -3,11 +3,12 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class PromoCodeService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
-  async getPromoCodes(distributorId: string) {
+  async getPromoCodes(distributorId: string | null) {
+    const where = distributorId ? { distributorId } : {};
     return this.prisma.promoCode.findMany({
-      where: { distributorId },
+      where,
       include: {
         _count: {
           select: { usages: true },

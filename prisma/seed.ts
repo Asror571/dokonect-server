@@ -38,7 +38,7 @@ async function main() {
         },
     });
 
-    await prisma.distributor.upsert({
+    const distributorProfile = await prisma.distributor.upsert({
         where: { userId: distributor.id },
         update: {},
         create: {
@@ -49,6 +49,78 @@ async function main() {
         },
     });
     console.log('✅ Distributor created:', distributor.phone);
+
+    // 2.1 Warehouse yaratish
+    const warehouse = await prisma.warehouse.upsert({
+        where: { id: 'default-warehouse-id' },
+        update: {},
+        create: {
+            id: 'default-warehouse-id',
+            distributorId: distributorProfile.id,
+            name: 'Asosiy ombor',
+            address: 'Toshkent, Chilonzor tumani',
+            region: 'Toshkent',
+            isActive: true,
+        },
+    });
+    console.log('✅ Warehouse created:', warehouse.name);
+
+    // 2.2 Kategoriya yaratish
+    const category = await prisma.category.upsert({
+        where: { id: 'default-category-id' },
+        update: {},
+        create: {
+            id: 'default-category-id',
+            distributorId: distributorProfile.id,
+            name: 'Ichimliklar',
+            slug: 'ichimliklar',
+        },
+    });
+    console.log('✅ Category created:', category.name);
+
+    // 2.3 Test mahsulotlar yaratish
+    const products = [
+        { name: 'Coca Cola 1.5L', sku: 'COKE-1.5L', price: 12000 },
+        { name: 'Pepsi 1L', sku: 'PEPSI-1L', price: 10000 },
+        { name: 'Fanta 0.5L', sku: 'FANTA-0.5L', price: 6000 },
+    ];
+
+    for (const prod of products) {
+        const product = await prisma.product.upsert({
+            where: { sku: prod.sku },
+            update: {},
+            create: {
+                distributorId: distributorProfile.id,
+                categoryId: category.id,
+                name: prod.name,
+                sku: prod.sku,
+                wholesalePrice: prod.price,
+                retailPrice: prod.price * 1.2,
+                status: 'ACTIVE',
+                unit: 'dona',
+            },
+        });
+
+        // Inventory yaratish
+        await prisma.inventory.upsert({
+            where: {
+                productId_variantId_warehouseId: {
+                    productId: product.id,
+                    variantId: null,
+                    warehouseId: warehouse.id,
+                },
+            },
+            update: {},
+            create: {
+                productId: product.id,
+                warehouseId: warehouse.id,
+                quantity: 100,
+                minThreshold: 10,
+            },
+        });
+
+        console.log(`✅ Product created: ${product.name}`);
+    }
 
     // 3. Client (Do'kon egasi) - +998901234500
     const client = await prisma.user.upsert({

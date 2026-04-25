@@ -12,22 +12,23 @@ import { Role } from '@prisma/client';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class PromoCodeController {
-  constructor(private promoCodeService: PromoCodeService) {}
+  constructor(private promoCodeService: PromoCodeService) { }
 
   @Get()
   @UseGuards(RolesGuard)
-  @Roles(Role.DISTRIBUTOR)
+  @Roles(Role.DISTRIBUTOR, Role.ADMIN)
   @ApiOperation({ summary: "Promo kodlar ro'yxati" })
-  getPromoCodes(@CurrentUser('distributor') distributor: any) {
-    return this.promoCodeService.getPromoCodes(distributor.id);
+  getPromoCodes(@CurrentUser() user: any) {
+    const distributorId = user.distributor?.id || null;
+    return this.promoCodeService.getPromoCodes(distributorId);
   }
 
   @Post()
   @UseGuards(RolesGuard)
-  @Roles(Role.DISTRIBUTOR)
+  @Roles(Role.DISTRIBUTOR, Role.ADMIN)
   @ApiOperation({ summary: 'Yangi promo kod' })
   createPromoCode(
-    @CurrentUser('distributor') distributor: any,
+    @CurrentUser() user: any,
     @Body()
     body: {
       code: string;
@@ -41,16 +42,17 @@ export class PromoCodeController {
       applicableTo?: any;
     },
   ) {
-    return this.promoCodeService.createPromoCode(distributor.id, body);
+    const distributorId = user.distributor?.id || null;
+    return this.promoCodeService.createPromoCode(distributorId, body);
   }
 
   @Put(':id')
   @UseGuards(RolesGuard)
-  @Roles(Role.DISTRIBUTOR)
+  @Roles(Role.DISTRIBUTOR, Role.ADMIN)
   @ApiOperation({ summary: 'Promo kodni tahrirlash' })
   updatePromoCode(
     @Param('id') id: string,
-    @CurrentUser('distributor') distributor: any,
+    @CurrentUser() user: any,
     @Body()
     body: {
       discountValue?: number;
@@ -61,15 +63,17 @@ export class PromoCodeController {
       validTo?: Date;
     },
   ) {
-    return this.promoCodeService.updatePromoCode(id, distributor.id, body);
+    const distributorId = user.distributor?.id || null;
+    return this.promoCodeService.updatePromoCode(id, distributorId, body);
   }
 
   @Delete(':id')
   @UseGuards(RolesGuard)
-  @Roles(Role.DISTRIBUTOR)
+  @Roles(Role.DISTRIBUTOR, Role.ADMIN)
   @ApiOperation({ summary: "Promo kodni o'chirish" })
-  deletePromoCode(@Param('id') id: string, @CurrentUser('distributor') distributor: any) {
-    return this.promoCodeService.deletePromoCode(id, distributor.id);
+  deletePromoCode(@Param('id') id: string, @CurrentUser() user: any) {
+    const distributorId = user.distributor?.id || null;
+    return this.promoCodeService.deletePromoCode(id, distributorId);
   }
 
   @Post('validate')

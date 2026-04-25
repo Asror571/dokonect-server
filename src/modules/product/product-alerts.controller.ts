@@ -10,22 +10,24 @@ import { Role } from '@prisma/client';
 @ApiTags('Product Alerts')
 @Controller('product-alerts')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.DISTRIBUTOR)
+@Roles(Role.DISTRIBUTOR, Role.ADMIN)
 @ApiBearerAuth()
 export class ProductAlertsController {
-  constructor(private analyticsService: ProductAnalyticsService) {}
+  constructor(private analyticsService: ProductAnalyticsService) { }
 
   @Get()
   @ApiOperation({ summary: 'Barcha alertlar' })
-  getAlerts(@CurrentUser('distributor') distributor: any, @Query('isRead') isRead?: string) {
+  getAlerts(@CurrentUser() user: any, @Query('isRead') isRead?: string) {
+    const distributorId = user.distributor?.id || null;
     const isReadBool = isRead === 'true' ? true : isRead === 'false' ? false : undefined;
-    return this.analyticsService.getAlerts(distributor.id, isReadBool);
+    return this.analyticsService.getAlerts(distributorId, isReadBool);
   }
 
   @Post('check')
   @ApiOperation({ summary: 'Alertlarni tekshirish va yaratish' })
-  checkAlerts(@CurrentUser('distributor') distributor: any) {
-    return this.analyticsService.checkAndCreateAlerts(distributor.id);
+  checkAlerts(@CurrentUser() user: any) {
+    const distributorId = user.distributor?.id || null;
+    return this.analyticsService.checkAndCreateAlerts(distributorId);
   }
 
   @Patch(':id/read')
@@ -36,7 +38,8 @@ export class ProductAlertsController {
 
   @Post('update-velocities')
   @ApiOperation({ summary: 'Barcha mahsulotlar uchun sales velocity yangilash' })
-  updateVelocities(@CurrentUser('distributor') distributor: any) {
-    return this.analyticsService.updateAllSalesVelocities(distributor.id);
+  updateVelocities(@CurrentUser() user: any) {
+    const distributorId = user.distributor?.id || null;
+    return this.analyticsService.updateAllSalesVelocities(distributorId);
   }
 }

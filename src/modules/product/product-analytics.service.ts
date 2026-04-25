@@ -3,7 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class ProductAnalyticsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   // Sales Velocity hisoblash
   async calculateSalesVelocity(productId: string) {
@@ -147,9 +147,14 @@ export class ProductAnalyticsService {
   }
 
   // Barcha mahsulotlar uchun sales velocity ni yangilash
-  async updateAllSalesVelocities(distributorId: string) {
+  async updateAllSalesVelocities(distributorId: string | null) {
+    const where: any = {};
+    if (distributorId) {
+      where.distributorId = distributorId;
+    }
+
     const products = await this.prisma.product.findMany({
-      where: { distributorId },
+      where,
       select: { id: true },
     });
 
@@ -162,13 +167,18 @@ export class ProductAnalyticsService {
   }
 
   // Smart Alerts yaratish
-  async checkAndCreateAlerts(distributorId: string) {
+  async checkAndCreateAlerts(distributorId: string | null) {
     const alerts = [];
+
+    const productWhere: any = {};
+    if (distributorId) {
+      productWhere.distributorId = distributorId;
+    }
 
     // Low stock alerts
     const lowStockProducts = await this.prisma.inventory.findMany({
       where: {
-        product: { distributorId },
+        product: productWhere,
         quantity: { lte: this.prisma.inventory.fields.minThreshold },
       },
       include: { product: true },
@@ -187,7 +197,7 @@ export class ProductAnalyticsService {
         const alert = await this.prisma.productAlert.create({
           data: {
             productId: inv.productId,
-            distributorId,
+            distributorId: inv.product.distributorId,
             alertType: 'LOW_STOCK',
             message: `${inv.product.name} kam qoldi (${inv.quantity} dona)`,
           },
@@ -199,7 +209,7 @@ export class ProductAnalyticsService {
     // Slow moving alerts
     const slowProducts = await this.prisma.salesVelocity.findMany({
       where: {
-        product: { distributorId },
+        product: productWhere,
         status: 'DEAD',
       },
       include: { product: true },
@@ -218,7 +228,7 @@ export class ProductAnalyticsService {
         const alert = await this.prisma.productAlert.create({
           data: {
             productId: velocity.productId,
-            distributorId,
+            distributorId: velocity.product.distributorId,
             alertType: 'SLOW_MOVING',
             message: `${velocity.product.name} uzoq vaqtdan beri sotilmayapti`,
           },
@@ -230,7 +240,7 @@ export class ProductAnalyticsService {
     // Fast moving alerts
     const fastProducts = await this.prisma.salesVelocity.findMany({
       where: {
-        product: { distributorId },
+        product: productWhere,
         status: 'FAST',
         daysUntilStockout: { lte: 7 },
       },
@@ -250,7 +260,7 @@ export class ProductAnalyticsService {
         const alert = await this.prisma.productAlert.create({
           data: {
             productId: velocity.productId,
-            distributorId,
+            distributorId: velocity.product.distributorId,
             alertType: 'FAST_MOVING',
             message: `${velocity.product.name} tez sotilmoqda, ${velocity.daysUntilStockout} kunda tugaydi`,
           },
@@ -259,17 +269,24 @@ export class ProductAnalyticsService {
       }
     }
 
-    return alerts;
+    return { success: true, data: alerts };
   }
 
   // Alertlarni olish
-  async getAlerts(distributorId: string, isRead?: boolean) {
-    const where: any = { distributorId };
+  async getAlerts(distributorId: string | null, isRead?: boolean) {
+    const where: any = {};
+
+    // Agar distributorId bo'lsa, faqat shu distributor alertlarini ko'rsat
+    if (distributorId) {
+      where.distributorId = distributorId;
+    }
+    // Aks holda (admin) barcha alertlarni ko'rsat
+
     if (isRead !== undefined) {
       where.isRead = isRead;
     }
 
-    return this.prisma.productAlert.findMany({
+    const alerts = await this.prisma.productAlert.findMany({
       where,
       include: {
         product: {
@@ -277,9 +294,16 @@ export class ProductAnalyticsService {
             images: { where: { isCover: true }, take: 1 },
           },
         },
+        distributor: {
+          select: {
+            companyName: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    return { success: true, data: alerts };
   }
 
   // Alertni o'qilgan deb belgilash

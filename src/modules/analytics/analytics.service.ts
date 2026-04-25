@@ -3,34 +3,30 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class AnalyticsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
-  async getDistributorAnalytics(distributorId: string, period: string = '7d') {
+  async getDistributorAnalytics(distributorId: string | null, period: string = '7d') {
     const days = period === '30d' ? 30 : period === '7d' ? 7 : 1;
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
+    const where = distributorId ? { distributorId } : {};
+    const orderWhere = distributorId
+      ? { distributorId, createdAt: { gte: startDate } }
+      : { createdAt: { gte: startDate } };
+
     const [orders, revenue, topProducts] = await Promise.all([
       this.prisma.order.findMany({
-        where: {
-          distributorId,
-          createdAt: { gte: startDate },
-        },
+        where: orderWhere,
       }),
       this.prisma.order.aggregate({
-        where: {
-          distributorId,
-          createdAt: { gte: startDate },
-        },
+        where: orderWhere,
         _sum: { totalAmount: true },
       }),
       this.prisma.orderItem.groupBy({
         by: ['productId'],
         where: {
-          order: {
-            distributorId,
-            createdAt: { gte: startDate },
-          },
+          order: orderWhere,
         },
         _sum: { quantity: true, total: true },
         orderBy: { _sum: { total: 'desc' } },
