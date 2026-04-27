@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -12,7 +12,7 @@ import { Role } from '@prisma/client';
 @Roles(Role.ADMIN)
 @ApiBearerAuth()
 export class AdminController {
-  constructor(private adminService: AdminService) {}
+  constructor(private adminService: AdminService) { }
 
   @Get('dashboard')
   @ApiOperation({ summary: 'Admin dashboard statistikasi' })
@@ -48,5 +48,30 @@ export class AdminController {
   @ApiOperation({ summary: 'Analitika' })
   getAnalytics(@Query('period') period?: string) {
     return this.adminService.getAnalytics(period);
+  }
+
+  @Get('distributors')
+  @ApiOperation({ summary: 'Barcha distributorlar' })
+  getAllDistributors() {
+    return this.adminService.getAllDistributors();
+  }
+
+  @Post('distributors')
+  @ApiOperation({ summary: 'Distributor yaratish' })
+  createDistributor(@Body() data: any) {
+    return this.adminService.createDistributor(data);
+  }
+
+  @Put('distributors/:id')
+  @Patch('distributors/:id')
+  @ApiOperation({ summary: 'Distributorni tahrirlash' })
+  updateDistributor(@Param('id') id: string, @Body() data: any) {
+    return this.adminService.updateDistributor(id, data);
+  }
+
+  @Delete('distributors/:id')
+  @ApiOperation({ summary: 'Distributorni o\'chirish' })
+  deleteDistributor(@Param('id') id: string) {
+    return this.adminService.deleteDistributor(id);
   }
 }

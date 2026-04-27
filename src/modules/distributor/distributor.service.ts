@@ -367,32 +367,59 @@ export class DistributorService {
     return { success: true, data: drivers };
   }
 
-  async createDriver(distributorId: string, data: any) {
+  async createDriver(distributorId: string | null, data: any) {
+    // Validate required fields
+    if (!data.name || !data.phone) {
+      throw new Error('Ism va telefon raqam majburiy');
+    }
+
+    if (!data.password || data.password.length < 6) {
+      throw new Error('Parol kamida 6 ta belgidan iborat bo\'lishi kerak');
+    }
+
+    // Check if phone already exists
+    const existingUser = await this.prisma.user.findUnique({
+      where: { phone: data.phone },
+      include: { driver: true },
+    });
+
+    if (existingUser) {
+      throw new Error('Bu telefon raqam allaqachon ro\'yxatdan o\'tgan. Boshqa raqam kiriting.');
+    }
+
     const bcrypt = require('bcryptjs');
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
-    // Create user
-    const user = await this.prisma.user.create({
-      data: {
-        name: data.name,
-        phone: data.phone,
-        password: hashedPassword,
-        role: 'DRIVER',
-        status: 'ACTIVE',
-      },
-    });
+    try {
+      // Create user
+      const user = await this.prisma.user.create({
+        data: {
+          name: data.name,
+          phone: data.phone,
+          password: hashedPassword,
+          role: 'DRIVER',
+          status: 'ACTIVE',
+        },
+      });
 
-    // Create driver profile
-    const driver = await this.prisma.driver.create({
-      data: {
-        userId: user.id,
-        vehicleType: data.vehicleType,
-        vehicleNumber: data.plateNumber || '',
-        licenseNumber: data.licenseNumber || '',
-      },
-    });
+      // Create driver profile
+      const driver = await this.prisma.driver.create({
+        data: {
+          userId: user.id,
+          vehicleType: data.vehicleType || 'Sedan',
+          vehicleNumber: data.plateNumber || '',
+          licenseNumber: data.licenseNumber || '',
+        },
+      });
 
-    return { success: true, data: { ...driver, user } };
+      return { success: true, data: { ...driver, user } };
+    } catch (error: any) {
+      // Handle Prisma unique constraint error
+      if (error.code === 'P2002') {
+        throw new Error('Bu telefon raqam allaqachon ro\'yxatdan o\'tgan');
+      }
+      throw new Error(error.message || 'Haydovchi yaratishda xatolik');
+    }
   }
 
   async updateDriver(driverId: string, distributorId: string, data: any) {
@@ -437,5 +464,27 @@ export class DistributorService {
     }
 
     return { success: true, data: updatedDriver };
+  }
+
+  async deleteDriver(driverId: string, distributorId: string | null) {
+    const driver = await this.prisma.driver.findUnique({
+      where: { id: driverId },
+      include: { user: true },
+    });
+
+    if (!driver) {
+      throw new NotFoundException('Haydovchi topilmadi');
+    }
+
+    try {
+      // Delete user first (this will cascade delete driver due to onDelete: Cascade)
+      await this.prisma.user.delete({
+        where: { id: driver.userId },
+      });
+
+      return { success: true, message: 'Haydovchi o\'chirildi' };
+    } catch (error: any) {
+      throw new Error('Haydovchini o\'chirishda xatolik: ' + error.message);
+    }
   }
 }

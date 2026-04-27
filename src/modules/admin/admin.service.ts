@@ -3,7 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class AdminService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async getDashboardStats() {
     const today = new Date();
@@ -127,5 +127,110 @@ export class AdminService {
       totalOrders: orders.length,
       totalRevenue: orders.reduce((sum, o) => sum + o.totalAmount, 0),
     };
+  }
+
+  async getAllDistributors() {
+    const distributors = await this.prisma.distributor.findMany({
+      include: {
+        user: true,
+        _count: {
+          select: {
+            products: true,
+            orders: true,
+          },
+        },
+      },
+      orderBy: { user: { name: 'asc' } },
+    });
+
+    return { success: true, data: distributors };
+  }
+
+  async createDistributor(data: any) {
+    const bcrypt = require('bcryptjs');
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+
+    const user = await this.prisma.user.create({
+      data: {
+        name: data.name,
+        phone: data.phone,
+        email: data.email,
+        password: hashedPassword,
+        role: 'DISTRIBUTOR',
+        status: 'ACTIVE',
+      },
+    });
+
+    const distributor = await this.prisma.distributor.create({
+      data: {
+        userId: user.id,
+        companyName: data.companyName,
+        address: data.address,
+        phone: data.phone,
+        isVerified: data.isVerified || false,
+      },
+      include: { user: true },
+    });
+
+    return { success: true, data: distributor };
+  }
+
+  async updateDistributor(id: string, data: any) {
+    const distributor = await this.prisma.distributor.findUnique({
+      where: { id },
+      include: { user: true },
+    });
+
+    if (!distributor) {
+      throw new Error('Distributor topilmadi');
+    }
+
+    await this.prisma.user.update({
+      where: { id: distributor.userId },
+      data: {
+        name: data.name,
+        phone: data.phone,
+        email: data.email,
+        status: data.status,
+      },
+    });
+
+    const updated = await this.prisma.distributor.update({
+      where: { id },
+      data: {
+        companyName: data.companyName,
+        address: data.address,
+        phone: data.phone,
+        isVerified: data.isVerified,
+      },
+      include: { user: true },
+    });
+
+    if (data.password) {
+      const bcrypt = require('bcryptjs');
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+      await this.prisma.user.update({
+        where: { id: distributor.userId },
+        data: { password: hashedPassword },
+      });
+    }
+
+    return { success: true, data: updated };
+  }
+
+  async deleteDistributor(id: string) {
+    const distributor = await this.prisma.distributor.findUnique({
+      where: { id },
+    });
+
+    if (!distributor) {
+      throw new Error('Distributor topilmadi');
+    }
+
+    await this.prisma.distributor.delete({
+      where: { id },
+    });
+
+    return { success: true, message: 'Distributor o\'chirildi' };
   }
 }

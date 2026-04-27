@@ -102,22 +102,24 @@ async function main() {
         });
 
         // Inventory yaratish
-        await prisma.inventory.upsert({
+        const existingInventory = await prisma.inventory.findFirst({
             where: {
-                productId_variantId_warehouseId: {
-                    productId: product.id,
-                    variantId: null,
-                    warehouseId: warehouse.id,
-                },
-            },
-            update: {},
-            create: {
                 productId: product.id,
                 warehouseId: warehouse.id,
-                quantity: 100,
-                minThreshold: 10,
+                variantId: null,
             },
         });
+
+        if (!existingInventory) {
+            await prisma.inventory.create({
+                data: {
+                    productId: product.id,
+                    warehouseId: warehouse.id,
+                    quantity: 100,
+                    minThreshold: 10,
+                },
+            });
+        }
 
         console.log(`✅ Product created: ${product.name}`);
     }

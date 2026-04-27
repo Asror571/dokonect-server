@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { DistributorService } from './distributor.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -109,12 +109,17 @@ export class DistributorController {
 
   @Post('drivers')
   @ApiOperation({ summary: 'Haydovchi qo\'shish' })
-  createDriver(@CurrentUser() user: any, @Body() data: any) {
-    const distributorId = user.distributor?.id || null;
-    return this.distributorService.createDriver(distributorId, data);
+  async createDriver(@CurrentUser() user: any, @Body() data: any) {
+    try {
+      const distributorId = user.distributor?.id || null;
+      return await this.distributorService.createDriver(distributorId, data);
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
   }
 
   @Patch('drivers/:driverId')
+  @Put('drivers/:driverId')
   @ApiOperation({ summary: 'Haydovchini yangilash' })
   updateDriver(
     @Param('driverId') driverId: string,
@@ -123,5 +128,15 @@ export class DistributorController {
   ) {
     const distributorId = user.distributor?.id || null;
     return this.distributorService.updateDriver(driverId, distributorId, data);
+  }
+
+  @Delete('drivers/:driverId')
+  @ApiOperation({ summary: 'Haydovchini o\'chirish' })
+  deleteDriver(
+    @Param('driverId') driverId: string,
+    @CurrentUser() user: any,
+  ) {
+    const distributorId = user.distributor?.id || null;
+    return this.distributorService.deleteDriver(driverId, distributorId);
   }
 }
