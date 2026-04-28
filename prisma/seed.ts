@@ -65,64 +65,39 @@ async function main() {
     });
     console.log('✅ Warehouse created:', warehouse.name);
 
-    // 2.2 Kategoriya yaratish
-    const category = await prisma.category.upsert({
-        where: { id: 'default-category-id' },
-        update: {},
-        create: {
-            id: 'default-category-id',
-            distributorId: distributorProfile.id,
-            name: 'Ichimliklar',
-            slug: 'ichimliklar',
-        },
-    });
-    console.log('✅ Category created:', category.name);
-
-    // 2.3 Test mahsulotlar yaratish
-    const products = [
-        { name: 'Coca Cola 1.5L', sku: 'COKE-1.5L', price: 12000 },
-        { name: 'Pepsi 1L', sku: 'PEPSI-1L', price: 10000 },
-        { name: 'Fanta 0.5L', sku: 'FANTA-0.5L', price: 6000 },
+    // 2.2 Kategoriyalar yaratish
+    const categories = [
+        { id: 'cat-ichimliklar', name: 'Ichimliklar', slug: 'ichimliklar' },
+        { id: 'cat-oziq-ovqat', name: 'Oziq-ovqat', slug: 'oziq-ovqat' },
+        { id: 'cat-shirinliklar', name: 'Shirinliklar', slug: 'shirinliklar' },
+        { id: 'cat-sut-mahsulotlari', name: 'Sut mahsulotlari', slug: 'sut-mahsulotlari' },
+        { id: 'cat-meva-sabzavot', name: 'Meva va sabzavot', slug: 'meva-sabzavot' },
     ];
 
-    for (const prod of products) {
-        const product = await prisma.product.upsert({
-            where: { sku: prod.sku },
-            update: {},
-            create: {
-                distributorId: distributorProfile.id,
-                categoryId: category.id,
-                name: prod.name,
-                sku: prod.sku,
-                wholesalePrice: prod.price,
-                retailPrice: prod.price * 1.2,
-                status: 'ACTIVE',
-                unit: 'dona',
-            },
-        });
-
-        // Inventory yaratish
-        const existingInventory = await prisma.inventory.findFirst({
+    for (const cat of categories) {
+        const existing = await prisma.category.findFirst({
             where: {
-                productId: product.id,
-                warehouseId: warehouse.id,
-                variantId: null,
+                distributorId: distributorProfile.id,
+                slug: cat.slug,
             },
         });
 
-        if (!existingInventory) {
-            await prisma.inventory.create({
+        if (!existing) {
+            await prisma.category.create({
                 data: {
-                    productId: product.id,
-                    warehouseId: warehouse.id,
-                    quantity: 100,
-                    minThreshold: 10,
+                    id: cat.id,
+                    distributorId: distributorProfile.id,
+                    name: cat.name,
+                    slug: cat.slug,
                 },
             });
+            console.log(`✅ Category created: ${cat.name}`);
+        } else {
+            console.log(`⏭️  Category already exists: ${cat.name}`);
         }
-
-        console.log(`✅ Product created: ${product.name}`);
     }
+
+    const category = categories[0]; // Ichimliklar kategoriyasi
 
     // 3. Client (Do'kon egasi) - +998901234500
     const client = await prisma.user.upsert({

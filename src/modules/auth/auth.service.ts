@@ -83,6 +83,11 @@ export class AuthService {
           { email: dto.email },
         ],
       },
+      include: {
+        client: true,
+        distributor: true,
+        driver: true,
+      },
     });
 
     if (!user) {

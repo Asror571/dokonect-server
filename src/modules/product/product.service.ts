@@ -10,7 +10,7 @@ export class ProductService {
     private prisma: PrismaService,
     private analyticsService: ProductAnalyticsService,
     private historyService: ProductHistoryService,
-  ) {}
+  ) { }
 
   async findAll(query: ProductQueryDto) {
     const {
@@ -238,37 +238,59 @@ export class ProductService {
   }
 
   async create(distributorId: string, dto: CreateProductDto) {
-    const { images, variants, ...productData } = dto;
+    try {
+      const { images, variants, initialStock, ...productData } = dto as any;
 
-    const product = await this.prisma.product.create({
-      data: {
-        ...productData,
-        distributorId,
-        images: images
-          ? {
+      const product = await this.prisma.product.create({
+        data: {
+          ...productData,
+          distributorId,
+          images: images
+            ? {
               create: images.map((url, index) => ({
                 url,
                 order: index,
                 isCover: index === 0,
               })),
             }
-          : undefined,
-        variants: variants
-          ? {
+            : undefined,
+          variants: variants
+            ? {
               create: variants,
             }
-          : undefined,
-      },
-      include: {
-        images: true,
-        variants: true,
-      },
-    });
+            : undefined,
+        },
+        include: {
+          images: true,
+          variants: true,
+        },
+      });
 
-    // Sales velocity ni hisoblash
-    await this.analyticsService.calculateSalesVelocity(product.id);
+      // Sales velocity ni hisoblash
+      await this.analyticsService.calculateSalesVelocity(product.id);
 
-    return product;
+      // Default warehouse topish va inventory yaratish
+      const defaultWarehouse = await this.prisma.warehouse.findFirst({
+        where: { distributorId },
+      });
+
+      if (defaultWarehouse) {
+        const stockQuantity = Number(initialStock) || 0;
+        await this.prisma.inventory.create({
+          data: {
+            productId: product.id,
+            warehouseId: defaultWarehouse.id,
+            quantity: stockQuantity,
+            minThreshold: 10,
+          },
+        });
+      }
+
+      return product;
+    } catch (error: any) {
+      console.error('Product create error:', error);
+      throw new Error(error.message || 'Mahsulot yaratishda xatolik');
+    }
   }
 
   async update(id: string, distributorId: string, dto: UpdateProductDto, changedBy?: string) {

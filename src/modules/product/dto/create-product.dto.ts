@@ -103,4 +103,9 @@ export class CreateProductDto {
   @Type(() => ProductVariantDto)
   @IsOptional()
   variants?: ProductVariantDto[];
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  initialStock?: string;
 }

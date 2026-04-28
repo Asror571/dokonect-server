@@ -9,6 +9,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Role } from '@prisma/client';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @ApiTags('Products')
 @Controller('products')
@@ -17,7 +18,8 @@ export class ProductController {
     private productService: ProductService,
     private analyticsService: ProductAnalyticsService,
     private historyService: ProductHistoryService,
-  ) {}
+    private prisma: PrismaService,
+  ) { }
 
   @Get()
   @ApiOperation({ summary: 'Barcha mahsulotlar (filters va sort bilan)' })
@@ -60,33 +62,54 @@ export class ProductController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.DISTRIBUTOR)
+  @Roles(Role.DISTRIBUTOR, Role.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Yangi mahsulot yaratish (Distributor)' })
-  create(@CurrentUser('distributor') distributor: any, @Body() dto: CreateProductDto) {
-    return this.productService.create(distributor.id, dto);
+  @ApiOperation({ summary: 'Yangi mahsulot yaratish (Distributor/Admin)' })
+  async create(
+    @CurrentUser() user: any,
+    @Query('distributorId') distributorId: string,
+    @Body() dto: CreateProductDto,
+  ) {
+    try {
+      let distId = user.distributor?.id || distributorId;
+
+      // Agar admin va distributorId yo'q bo'lsa, birinchi distributorni olish
+      if (!distId && user.role === 'ADMIN') {
+        const firstDist = await this.prisma.distributor.findFirst();
+        distId = firstDist?.id;
+      }
+
+      if (!distId) {
+        throw new Error('distributorId kerak');
+      }
+      return this.productService.create(distId, dto);
+    } catch (error: any) {
+      console.error('Create product error:', error);
+      throw error;
+    }
   }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.DISTRIBUTOR)
+  @Roles(Role.DISTRIBUTOR, Role.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Mahsulotni tahrirlash (Distributor)' })
+  @ApiOperation({ summary: 'Mahsulotni tahrirlash (Distributor/Admin)' })
   update(
     @Param('id') id: string,
-    @CurrentUser('distributor') distributor: any,
-    @CurrentUser('userId') userId: string,
+    @CurrentUser() user: any,
     @Body() dto: UpdateProductDto,
   ) {
-    return this.productService.update(id, distributor.id, dto, userId);
+    const distributorId = user.distributor?.id;
+    return this.productService.update(id, distributorId, dto, user.id);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.DISTRIBUTOR)
+  @Roles(Role.DISTRIBUTOR, Role.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: "Mahsulotni o'chirish (Distributor)" })
-  remove(@Param('id') id: string, @CurrentUser('distributor') distributor: any) {
-    return this.productService.remove(id, distributor.id);
+  @ApiOperation({ summary: "Mahsulotni o'chirish (Distributor/Admin)" })
+  remove(@Param('id') id: string, @CurrentUser() user: any) {
+    const distributorId = user.distributor?.id;
+    return this.productService.remove(id, distributorId);
   }
 }
