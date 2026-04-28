@@ -320,32 +320,78 @@ export class DistributorService {
 
   async updateStock(
     productId: string,
-    distributorId: string,
+    distributorId: string | null,
     quantity: number,
     type: 'IN' | 'OUT' | 'ADJUSTMENT',
     note?: string,
     changedBy?: string,
   ) {
-    const product = await this.prisma.product.findFirst({
-      where: { id: productId, distributorId },
-    });
+    // Mahsulotni topish
+    const where: any = { id: productId };
+    if (distributorId) {
+      where.distributorId = distributorId;
+    }
+
+    const product = await this.prisma.product.findFirst({ where });
 
     if (!product) {
       throw new NotFoundException('Mahsulot topilmadi');
     }
 
-    await this.prisma.stockLog.create({
-      data: {
-        productId,
-        distributorId,
-        type,
-        quantity,
-        note,
-        changedBy,
-      },
+    // Barcha inventory larni topish va yangilash
+    const inventories = await this.prisma.inventory.findMany({
+      where: { productId },
     });
 
-    return { success: true };
+    if (!inventories || inventories.length === 0) {
+      throw new NotFoundException(
+        'Inventory topilmadi. Iltimos avval mahsulot uchun inventory yarating.',
+      );
+    }
+
+    // Har bir inventory ni yangilash
+    const updatePromises = inventories.map(async (inventory) => {
+      let newQuantity = inventory.quantity;
+      if (type === 'IN') {
+        newQuantity += quantity;
+      } else if (type === 'OUT') {
+        newQuantity -= quantity;
+      } else if (type === 'ADJUSTMENT') {
+        newQuantity = quantity;
+      }
+
+      return this.prisma.inventory.update({
+        where: { id: inventory.id },
+        data: { quantity: Math.max(0, newQuantity) }, // Prevent negative stock
+      });
+    });
+
+    await Promise.all(updatePromises);
+
+    // Stock log yaratish
+    if (distributorId) {
+      await this.prisma.stockLog.create({
+        data: {
+          productId,
+          distributorId,
+          type,
+          quantity,
+          note,
+          changedBy,
+        },
+      });
+    }
+
+    // Total quantity ni hisoblash
+    const updatedInventories = await this.prisma.inventory.findMany({
+      where: { productId },
+    });
+    const totalQuantity = updatedInventories.reduce(
+      (sum, inv) => sum + inv.quantity,
+      0,
+    );
+
+    return { success: true, newQuantity: totalQuantity };
   }
 
   async getDrivers(distributorId: string | null) {

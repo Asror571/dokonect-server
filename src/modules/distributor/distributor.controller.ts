@@ -85,7 +85,7 @@ export class DistributorController {
 
   @Patch('products/:productId/stock')
   @ApiOperation({ summary: 'Stokni yangilash' })
-  updateStock(
+  async updateStock(
     @Param('productId') productId: string,
     @CurrentUser() user: any,
     @Body() body: { quantity: number; type: 'IN' | 'OUT' | 'ADJUSTMENT'; note?: string },

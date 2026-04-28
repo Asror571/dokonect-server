@@ -75,10 +75,12 @@ async function main() {
     ];
 
     for (const cat of categories) {
-        const existing = await prisma.category.findFirst({
+        const existing = await prisma.category.findUnique({
             where: {
-                distributorId: distributorProfile.id,
-                slug: cat.slug,
+                distributorId_slug: {
+                    distributorId: distributorProfile.id,
+                    slug: cat.slug,
+                },
             },
         });
 
@@ -93,7 +95,7 @@ async function main() {
             });
             console.log(`✅ Category created: ${cat.name}`);
         } else {
-            console.log(`⏭️  Category already exists: ${cat.name}`);
+            console.log(`⏭️  Category exists: ${cat.name}`);
         }
     }
 
