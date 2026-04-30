@@ -66,6 +66,17 @@ export class DistributorController {
     return this.distributorService.rejectOrder(orderId, distributorId, reason);
   }
 
+  @Post('orders/:orderId/assign')
+  @ApiOperation({ summary: 'Buyurtmaga haydovchi tayinlash' })
+  assignDriver(
+    @Param('orderId') orderId: string,
+    @CurrentUser() user: any,
+    @Body('driverId') driverId: string,
+  ) {
+    const distributorId = user.distributor?.id || null;
+    return this.distributorService.assignDriver(orderId, driverId, distributorId);
+  }
+
   @Get('stock-logs')
   @ApiOperation({ summary: 'Stok tarixi' })
   getStockLogs(@CurrentUser() user: any) {
@@ -119,15 +130,43 @@ export class DistributorController {
   }
 
   @Patch('drivers/:driverId')
-  @Put('drivers/:driverId')
-  @ApiOperation({ summary: 'Haydovchini yangilash' })
-  updateDriver(
+  @ApiOperation({ summary: 'Haydovchini yangilash (PATCH)' })
+  updateDriverPatch(
     @Param('driverId') driverId: string,
     @CurrentUser() user: any,
     @Body() data: any,
   ) {
     const distributorId = user.distributor?.id || null;
     return this.distributorService.updateDriver(driverId, distributorId, data);
+  }
+
+  @Put('drivers/:driverId')
+  @ApiOperation({ summary: 'Haydovchini yangilash (PUT)' })
+  updateDriverPut(
+    @Param('driverId') driverId: string,
+    @CurrentUser() user: any,
+    @Body() data: any,
+  ) {
+    const distributorId = user.distributor?.id || null;
+    return this.distributorService.updateDriver(driverId, distributorId, data);
+  }
+
+  @Get('connections')
+  @ApiOperation({ summary: "Ulanish so'rovlari ro'yxati" })
+  getConnectionRequests(@CurrentUser() user: any) {
+    const distributorId = user.distributor?.id || null;
+    return this.distributorService.getConnectionRequests(distributorId);
+  }
+
+  @Patch('connections/:linkId')
+  @ApiOperation({ summary: "Ulanish so'rovini qabul/rad etish" })
+  respondToConnection(
+    @Param('linkId') linkId: string,
+    @CurrentUser() user: any,
+    @Body('action') action: 'APPROVED' | 'REJECTED',
+  ) {
+    const distributorId = user.distributor?.id || null;
+    return this.distributorService.respondToConnection(linkId, distributorId, action);
   }
 
   @Delete('drivers/:driverId')

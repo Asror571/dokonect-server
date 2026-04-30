@@ -277,6 +277,26 @@ export class DistributorService {
     return updatedOrder;
   }
 
+  async assignDriver(orderId: string, driverId: string, distributorId: string | null) {
+    const where: any = { id: orderId };
+    if (distributorId) where.distributorId = distributorId;
+
+    const order = await this.prisma.order.findFirst({ where });
+    if (!order) throw new NotFoundException('Buyurtma topilmadi');
+
+    const updated = await this.prisma.order.update({
+      where: { id: orderId },
+      data: { driverId, status: 'ASSIGNED' },
+      include: { driver: { include: { user: true } } },
+    });
+
+    await this.prisma.orderStatusHistory.create({
+      data: { orderId, status: 'ASSIGNED' },
+    });
+
+    return updated;
+  }
+
   async getStockLogs(distributorId: string | null) {
     const where: any = {};
     if (distributorId) {
@@ -543,6 +563,37 @@ export class DistributorService {
     }
 
     return { success: true, data: updatedDriver };
+  }
+
+  async getConnectionRequests(distributorId: string | null) {
+    const links = await this.prisma.storeDistributorLink.findMany({
+      where: distributorId ? { distributorId } : {},
+      include: {
+        storeOwner: {
+          include: {
+            user: { select: { id: true, name: true, phone: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return { success: true, data: links };
+  }
+
+  async respondToConnection(linkId: string, distributorId: string | null, action: 'APPROVED' | 'REJECTED') {
+    const link = await this.prisma.storeDistributorLink.findFirst({
+      where: {
+        id: linkId,
+        ...(distributorId ? { distributorId } : {}),
+      },
+    });
+    if (!link) throw new NotFoundException("Ulanish so'rovi topilmadi");
+
+    const updated = await this.prisma.storeDistributorLink.update({
+      where: { id: linkId },
+      data: { status: action },
+    });
+    return { success: true, data: updated };
   }
 
   async deleteDriver(driverId: string, distributorId: string | null) {

@@ -62,6 +62,28 @@ export class DriverController {
     );
   }
 
+  @Get('orders')
+  @ApiOperation({ summary: 'Tayinlangan buyurtmalar ro\'yxati' })
+  getOrders(
+    @CurrentUser('driver') driver: any,
+    @Query('status') status?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.driverService.getOrders(
+      driver.id,
+      status,
+      page ? parseInt(page) : 1,
+      limit ? parseInt(limit) : 20,
+    );
+  }
+
+  @Get('orders/:orderId')
+  @ApiOperation({ summary: 'Buyurtma tafsiloti' })
+  getOrderById(@Param('orderId') orderId: string, @CurrentUser('driver') driver: any) {
+    return this.driverService.getOrderById(driver.id, orderId);
+  }
+
   @Get('earnings')
   @ApiOperation({ summary: 'Daromad tarixi' })
   getEarnings(@CurrentUser('driver') driver: any, @Query('period') period?: string) {

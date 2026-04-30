@@ -39,6 +39,18 @@ export class OrderController {
     return this.orderService.findOne(id, user.id, user.role);
   }
 
+  @Patch(':id/cancel')
+  @UseGuards(RolesGuard)
+  @Roles(Role.CLIENT)
+  @ApiOperation({ summary: 'Buyurtmani bekor qilish (Client, faqat NEW statusda)' })
+  cancelOrder(
+    @Param('id') id: string,
+    @CurrentUser('client') client: any,
+    @Body('reason') reason?: string,
+  ) {
+    return this.orderService.cancelOrder(id, client.id, reason);
+  }
+
   @Patch(':id/status')
   @UseGuards(RolesGuard)
   @Roles(Role.DISTRIBUTOR)

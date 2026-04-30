@@ -90,12 +90,25 @@ export class ProductController {
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.DISTRIBUTOR, Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Mahsulotni tahrirlash PUT (Distributor/Admin)' })
+  updatePut(
+    @Param('id') id: string,
+    @CurrentUser() user: any,
+    @Body() dto: UpdateProductDto,
+  ) {
+    const distributorId = user.distributor?.id;
+    return this.productService.update(id, distributorId, dto, user.id);
+  }
+
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.DISTRIBUTOR, Role.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Mahsulotni tahrirlash (Distributor/Admin)' })
-  update(
+  @ApiOperation({ summary: 'Mahsulotni tahrirlash PATCH (Distributor/Admin)' })
+  updatePatch(
     @Param('id') id: string,
     @CurrentUser() user: any,
     @Body() dto: UpdateProductDto,

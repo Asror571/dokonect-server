@@ -146,6 +146,53 @@ export class DriverService {
     return order;
   }
 
+  async getOrders(driverId: string, status?: string, page = 1, limit = 20) {
+    const where: any = { driverId };
+    if (status) where.status = status;
+
+    const skip = (page - 1) * limit;
+
+    const [orders, total] = await Promise.all([
+      this.prisma.order.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          client: { include: { user: { select: { name: true, phone: true } } } },
+          distributor: { select: { id: true, companyName: true, address: true } },
+          items: { include: { product: { select: { id: true, name: true, unit: true } } } },
+          delivery: true,
+        },
+      }),
+      this.prisma.order.count({ where }),
+    ]);
+
+    return { orders, total, page, limit };
+  }
+
+  async getOrderById(driverId: string, orderId: string) {
+    const order = await this.prisma.order.findFirst({
+      where: { id: orderId, driverId },
+      include: {
+        client: { include: { user: { select: { name: true, phone: true, avatar: true } } } },
+        distributor: { select: { id: true, companyName: true, address: true, phone: true } },
+        items: {
+          include: {
+            product: {
+              select: { id: true, name: true, unit: true, images: { where: { isCover: true }, take: 1 } },
+            },
+          },
+        },
+        delivery: true,
+        statusHistory: { orderBy: { timestamp: 'asc' } },
+      },
+    });
+
+    if (!order) throw new Error('Buyurtma topilmadi');
+    return order;
+  }
+
   async getEarnings(driverId: string, period: string = 'today') {
     const startDate = new Date();
     if (period === 'today') {

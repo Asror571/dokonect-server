@@ -221,6 +221,31 @@ export class OrderService {
     return order;
   }
 
+  async cancelOrder(id: string, clientId: string, reason?: string) {
+    const order = await this.prisma.order.findFirst({
+      where: { id, clientId },
+    });
+
+    if (!order) throw new NotFoundException('Buyurtma topilmadi');
+
+    if (!['NEW'].includes(order.status)) {
+      throw new BadRequestException(
+        "Faqat 'Yangi' statusdagi buyurtmani bekor qilish mumkin",
+      );
+    }
+
+    return this.prisma.order.update({
+      where: { id },
+      data: {
+        status: OrderStatus.CANCELLED,
+        rejectionReason: reason,
+        statusHistory: {
+          create: { status: OrderStatus.CANCELLED, note: reason || 'Mijoz tomonidan bekor qilindi' },
+        },
+      },
+    });
+  }
+
   async updateStatus(id: string, distributorId: string, dto: UpdateOrderStatusDto) {
     const order = await this.prisma.order.findFirst({
       where: { id, distributorId },

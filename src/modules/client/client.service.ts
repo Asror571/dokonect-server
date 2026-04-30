@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ClientService {
@@ -41,11 +42,10 @@ export class ClientService {
   }
 
   async getProducts(clientId: string, query: any) {
-    const { categoryId, search, distributorId, brandId, minPrice, maxPrice, sort } = query;
+    const { categoryId, search, distributorId, brandId, minPrice, maxPrice, sort, page, limit } = query;
 
     const where: any = {
       status: 'ACTIVE',
-      distributor: { isVerified: true },
     };
 
     if (categoryId) where.categoryId = categoryId;
@@ -67,23 +67,37 @@ export class ClientService {
       ];
     }
 
-    return this.prisma.product.findMany({
-      where,
-      include: {
-        distributor: { select: { id: true, companyName: true, phone: true } },
-        category: true,
-        brand: true,
-        images: { where: { isCover: true }, take: 1 },
-        bulkRules: true,
-        priceRules: { where: { clientId } },
-      },
-      orderBy:
-        sort === 'price_asc'
-          ? { wholesalePrice: 'asc' }
-          : sort === 'price_desc'
-            ? { wholesalePrice: 'desc' }
-            : { createdAt: 'desc' },
-    });
+    const orderBy: Prisma.ProductOrderByWithRelationInput =
+      sort === 'price_asc'
+        ? { wholesalePrice: Prisma.SortOrder.asc }
+        : sort === 'price_desc'
+          ? { wholesalePrice: Prisma.SortOrder.desc }
+          : { createdAt: Prisma.SortOrder.desc };
+
+    const take = limit ? parseInt(limit) : 20;
+    const skip = page ? (parseInt(page) - 1) * take : 0;
+
+    const include = {
+      distributor: { select: { id: true, companyName: true, phone: true, isVerified: true } },
+      category: true,
+      brand: true,
+      images: { where: { isCover: true }, take: 1 },
+      bulkRules: true,
+      priceRules: { where: { clientId } },
+      inventory: { select: { quantity: true } },
+    };
+
+    const [rawProducts, total] = await Promise.all([
+      this.prisma.product.findMany({ where, include, orderBy, skip, take }),
+      this.prisma.product.count({ where }),
+    ]);
+
+    const products = rawProducts.map((p: any) => ({
+      ...p,
+      stock: (p.inventory as any[]).reduce((sum: number, inv: any) => sum + (inv.quantity || 0), 0),
+    }));
+
+    return { products, total, page: parseInt(page) || 1, limit: take };
   }
 
   async getDistributors(clientId: string, region?: string, search?: string) {

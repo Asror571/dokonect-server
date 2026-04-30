@@ -63,9 +63,14 @@ export class AdminController {
   }
 
   @Put('distributors/:id')
+  @ApiOperation({ summary: 'Distributorni tahrirlash (PUT)' })
+  updateDistributorPut(@Param('id') id: string, @Body() data: any) {
+    return this.adminService.updateDistributor(id, data);
+  }
+
   @Patch('distributors/:id')
-  @ApiOperation({ summary: 'Distributorni tahrirlash' })
-  updateDistributor(@Param('id') id: string, @Body() data: any) {
+  @ApiOperation({ summary: 'Distributorni tahrirlash (PATCH)' })
+  updateDistributorPatch(@Param('id') id: string, @Body() data: any) {
     return this.adminService.updateDistributor(id, data);
   }
 

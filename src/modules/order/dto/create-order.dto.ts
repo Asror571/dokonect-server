@@ -38,7 +38,8 @@ export class CreateOrderDto {
   items: OrderItemDto[];
 
   @ApiProperty()
-  deliveryAddress: any;
+  @IsOptional()
+  deliveryAddress?: any;
 
   @ApiPropertyOptional()
   @IsString()
