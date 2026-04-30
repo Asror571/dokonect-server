@@ -241,23 +241,38 @@ export class ProductService {
     try {
       const { images, variants, initialStock, ...productData } = dto as any;
 
+      // Bo'sh SKU — avtomatik yaratish
+      const sku = productData.sku?.trim()
+        ? productData.sku.trim()
+        : `SKU-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+
       const product = await this.prisma.product.create({
         data: {
-          ...productData,
-          distributorId,
-          images: images
+          name:          productData.name,
+          sku,
+          description:   productData.description   || null,
+          wholesalePrice: Number(productData.wholesalePrice),
+          retailPrice:   productData.retailPrice   ? Number(productData.retailPrice)  : null,
+          costPrice:     productData.costPrice     ? Number(productData.costPrice)    : null,
+          unit:          productData.unit          || 'dona',
+          status:        productData.status        || 'ACTIVE',
+          youtubeUrl:    productData.youtubeUrl    || null,
+          discountType:  productData.discountType  || null,
+          discountValue: productData.discountValue ? Number(productData.discountValue) : null,
+          distributor:   { connect: { id: distributorId } },
+          category:      productData.categoryId ? { connect: { id: productData.categoryId } } : undefined,
+          brand:         productData.brandId    ? { connect: { id: productData.brandId } }    : undefined,
+          images: images?.length
             ? {
-              create: images.map((url, index) => ({
+              create: images.map((url: string, index: number) => ({
                 url,
                 order: index,
                 isCover: index === 0,
               })),
             }
             : undefined,
-          variants: variants
-            ? {
-              create: variants,
-            }
+          variants: variants?.length
+            ? { create: variants }
             : undefined,
         },
         include: {
@@ -339,19 +354,37 @@ export class ProductService {
   }
 
   async remove(id: string, distributorId: string) {
-    const product = await this.prisma.product.findFirst({
-      where: { id, distributorId },
-    });
+    const where: any = { id };
+    if (distributorId) where.distributorId = distributorId;
+
+    const product = await this.prisma.product.findFirst({ where });
 
     if (!product) {
       throw new NotFoundException('Mahsulot topilmadi');
     }
 
-    // Soft delete
-    await this.prisma.product.update({
-      where: { id },
-      data: { status: 'OUT_OF_STOCK' },
-    });
+    try {
+      // Avval bog'liq inventory va boshqa cascade bo'lmagan yozuvlarni o'chirish
+      await this.prisma.inventory.deleteMany({ where: { productId: id } });
+      await this.prisma.stockLog.deleteMany({ where: { productId: id } });
+      await this.prisma.priceHistory.deleteMany({ where: { productId: id } });
+      await this.prisma.productAlert.deleteMany({ where: { productId: id } });
+      await this.prisma.salesVelocity.deleteMany({ where: { productId: id } });
+      await this.prisma.priceRule.deleteMany({ where: { productId: id } });
+      await this.prisma.bulkRule.deleteMany({ where: { productId: id } });
+
+      await this.prisma.product.delete({ where: { id } });
+    } catch (error: any) {
+      // Buyurtmalarda ishlatilgan mahsulotni o'chirib bo'lmaydi — arxivlaymiz
+      if (error.code === 'P2003' || error.code === 'P2014') {
+        await this.prisma.product.update({
+          where: { id },
+          data: { status: 'DRAFT' },
+        });
+        return { message: "Mahsulot arxivlandi (buyurtmalarda ishlatilgan)" };
+      }
+      throw error;
+    }
 
     return { message: "Mahsulot o'chirildi" };
   }

@@ -62,6 +62,9 @@ export class AuthService {
       });
     }
 
+    const refreshToken = this.generateRefreshToken(user.id, user.role);
+    await this.prisma.user.update({ where: { id: user.id }, data: { refreshToken } });
+
     const token = this.generateToken(user.id, user.role);
 
     return {
@@ -69,7 +72,8 @@ export class AuthService {
       data: {
         user: this.sanitizeUser(user),
         accessToken: token,
-        token: token, // backward compatibility
+        token: token,
+        refreshToken,
       },
     };
   }
@@ -104,9 +108,11 @@ export class AuthService {
       throw new UnauthorizedException('Akkaunt faol emas');
     }
 
+    const refreshToken = this.generateRefreshToken(user.id, user.role);
+
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { lastLogin: new Date() },
+      data: { lastLogin: new Date(), refreshToken },
     });
 
     const token = this.generateToken(user.id, user.role);
@@ -116,9 +122,27 @@ export class AuthService {
       data: {
         user: this.sanitizeUser(user),
         accessToken: token,
-        token: token, // backward compatibility
+        token: token,
+        refreshToken,
       },
     };
+  }
+
+  async refreshAccessToken(refreshToken: string) {
+    let payload: any;
+    try {
+      payload = this.jwtService.verify(refreshToken);
+    } catch {
+      throw new UnauthorizedException('Refresh token yaroqsiz yoki muddati tugagan');
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
+    if (!user || user.refreshToken !== refreshToken) {
+      throw new UnauthorizedException('Refresh token topilmadi');
+    }
+
+    const newAccessToken = this.generateToken(user.id, user.role);
+    return { accessToken: newAccessToken, token: newAccessToken };
   }
 
   async getMe(userId: string) {
@@ -140,6 +164,10 @@ export class AuthService {
 
   private generateToken(userId: string, role: string): string {
     return this.jwtService.sign({ sub: userId, role });
+  }
+
+  private generateRefreshToken(userId: string, role: string): string {
+    return this.jwtService.sign({ sub: userId, role, type: 'refresh' }, { expiresIn: '30d' });
   }
 
   private sanitizeUser(user: any) {

@@ -322,10 +322,17 @@ export class DistributorService {
     productId: string,
     distributorId: string | null,
     quantity: number,
-    type: 'IN' | 'OUT' | 'ADJUSTMENT',
+    type: 'IN' | 'OUT' | 'ADJUSTMENT' | 'ADD' | 'SUBTRACT' | 'SET',
     note?: string,
     changedBy?: string,
   ) {
+    // Frontend type nomlarini backend nomlariga moslashtirish
+    const normalizedType: 'IN' | 'OUT' | 'ADJUSTMENT' =
+      type === 'ADD' ? 'IN' :
+      type === 'SUBTRACT' ? 'OUT' :
+      type === 'SET' ? 'ADJUSTMENT' :
+      type as 'IN' | 'OUT' | 'ADJUSTMENT';
+
     // Mahsulotni topish
     const where: any = { id: productId };
     if (distributorId) {
@@ -338,31 +345,57 @@ export class DistributorService {
       throw new NotFoundException('Mahsulot topilmadi');
     }
 
-    // Barcha inventory larni topish va yangilash
-    const inventories = await this.prisma.inventory.findMany({
+    // Inventory topish — yo'q bo'lsa avtomatik yaratish
+    let inventories = await this.prisma.inventory.findMany({
       where: { productId },
     });
 
     if (!inventories || inventories.length === 0) {
-      throw new NotFoundException(
-        'Inventory topilmadi. Iltimos avval mahsulot uchun inventory yarating.',
-      );
+      // Warehouse topish yoki yaratish
+      let warehouse = distributorId
+        ? await this.prisma.warehouse.findFirst({ where: { distributorId } })
+        : null;
+
+      if (!warehouse && distributorId) {
+        warehouse = await this.prisma.warehouse.create({
+          data: {
+            distributor: { connect: { id: distributorId } },
+            name: 'Asosiy ombor',
+            address: '',
+            region: 'Noma\'lum',
+          },
+        });
+      }
+
+      if (warehouse) {
+        const created = await this.prisma.inventory.create({
+          data: {
+            productId,
+            warehouseId: warehouse.id,
+            quantity: 0,
+            minThreshold: 10,
+          },
+        });
+        inventories = [created];
+      } else {
+        throw new NotFoundException('Ombor topilmadi');
+      }
     }
 
     // Har bir inventory ni yangilash
     const updatePromises = inventories.map(async (inventory) => {
       let newQuantity = inventory.quantity;
-      if (type === 'IN') {
+      if (normalizedType === 'IN') {
         newQuantity += quantity;
-      } else if (type === 'OUT') {
+      } else if (normalizedType === 'OUT') {
         newQuantity -= quantity;
-      } else if (type === 'ADJUSTMENT') {
+      } else if (normalizedType === 'ADJUSTMENT') {
         newQuantity = quantity;
       }
 
       return this.prisma.inventory.update({
         where: { id: inventory.id },
-        data: { quantity: Math.max(0, newQuantity) }, // Prevent negative stock
+        data: { quantity: Math.max(0, newQuantity) },
       });
     });
 
@@ -374,7 +407,7 @@ export class DistributorService {
         data: {
           productId,
           distributorId,
-          type,
+          type: normalizedType,
           quantity,
           note,
           changedBy,

@@ -22,6 +22,12 @@ export class AuthController {
     return this.authService.login(dto);
   }
 
+  @Post('refresh-token')
+  @ApiOperation({ summary: 'Access token yangilash' })
+  refreshToken(@Body('refreshToken') refreshToken: string) {
+    return this.authService.refreshAccessToken(refreshToken);
+  }
+
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
