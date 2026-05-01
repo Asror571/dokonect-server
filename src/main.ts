@@ -1,10 +1,40 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { IoAdapter } from '@nestjs/platform-socket.io';
+import { ServerOptions } from 'socket.io';
 import { AppModule } from './app.module';
+
+const ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'https://dokonect-frontend-seven.vercel.app',
+  /https:\/\/.*\.vercel\.app$/,
+  'http://16.16.213.165',
+  'http://16.16.213.165:5000',
+];
+
+class CorsIoAdapter extends IoAdapter {
+  createIOServer(port: number, options?: ServerOptions): any {
+    return super.createIOServer(port, {
+      ...options,
+      cors: {
+        origin: (origin: string, cb: (err: Error | null, ok?: boolean) => void) => {
+          if (!origin) return cb(null, true);
+          const ok = ALLOWED_ORIGINS.some(o =>
+            typeof o === 'string' ? o === origin : o.test(origin),
+          );
+          cb(ok ? null : new Error('Not allowed by CORS'), ok);
+        },
+        credentials: true,
+      },
+    });
+  }
+}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.useWebSocketAdapter(new CorsIoAdapter(app));
 
   // Global validation pipe
   app.useGlobalPipes(

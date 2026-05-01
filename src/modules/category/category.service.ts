@@ -70,9 +70,13 @@ export class CategoryService {
 
     return this.prisma.category.create({
       data: {
-        ...data,
+        name: data.name,
         slug,
         distributorId,
+        parentId: data.parentId || null,
+        icon:     data.icon    || null,
+        image:    data.image   || null,
+        order:    data.order   ?? 0,
       },
     });
   }
@@ -88,24 +92,25 @@ export class CategoryService {
       order?: number;
     },
   ) {
-    const category = await this.prisma.category.findFirst({
-      where: { id, distributorId },
-    });
+    const category = await this.prisma.category.findUnique({ where: { id } });
 
-    if (!category) {
+    if (!category || category.distributorId !== distributorId) {
       throw new NotFoundException('Kategoriya topilmadi');
     }
 
-    const updateData: any = { ...data };
+    const updateData: any = {
+      ...(data.name     !== undefined && { name: data.name }),
+      ...(data.parentId !== undefined && { parentId: data.parentId || null }),
+      ...(data.icon     !== undefined && { icon: data.icon || null }),
+      ...(data.image    !== undefined && { image: data.image || null }),
+      ...(data.order    !== undefined && { order: data.order }),
+    };
 
     if (data.name) {
       updateData.slug = slugify(data.name, { lower: true, strict: true });
     }
 
-    return this.prisma.category.update({
-      where: { id },
-      data: updateData,
-    });
+    return this.prisma.category.update({ where: { id }, data: updateData });
   }
 
   async deleteCategory(id: string, distributorId: string) {

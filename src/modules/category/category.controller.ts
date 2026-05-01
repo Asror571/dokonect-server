@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CategoryService } from './category.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -16,14 +16,18 @@ export class CategoryController {
   @Get()
   @Public()
   @ApiOperation({ summary: "Kategoriyalar ro'yxati" })
-  getCategories(@Param('distributorId') distributorId: string) {
-    return this.categoryService.getCategories(distributorId);
+  async getCategories(@Query('distributorId') distributorId: string) {
+    try {
+      return await this.categoryService.getCategories(distributorId);
+    } catch {
+      return [];
+    }
   }
 
   @Get(':id')
   @Public()
   @ApiOperation({ summary: 'Kategoriya tafsiloti' })
-  getCategory(@Param('id') id: string, @Param('distributorId') distributorId: string) {
+  getCategory(@Param('id') id: string, @Query('distributorId') distributorId: string) {
     return this.categoryService.getCategory(id, distributorId);
   }
 

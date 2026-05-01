@@ -10,40 +10,47 @@ export class DistributorService {
     today.setHours(0, 0, 0, 0);
 
     const orderWhere: any = {};
-    if (distributorId) {
-      orderWhere.distributorId = distributorId;
-    }
+    if (distributorId) orderWhere.distributorId = distributorId;
 
     const productWhere: any = {};
-    if (distributorId) {
-      productWhere.distributorId = distributorId;
-    }
+    if (distributorId) productWhere.distributorId = distributorId;
 
-    const [incomingOrders, readyOrders, shippedOrders, lowStockProducts, revenue] =
+    // Oxirgi 7 kun uchun sanalar
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      d.setHours(0, 0, 0, 0);
+      return d;
+    });
+
+    const [incomingOrders, readyOrders, shippedOrders, lowStockProducts, revenue, activeDrivers, salesTrendRaw] =
       await Promise.all([
+        this.prisma.order.count({ where: { ...orderWhere, status: 'NEW' } }),
+        this.prisma.order.count({ where: { ...orderWhere, status: 'ACCEPTED' } }),
         this.prisma.order.count({
-          where: { ...orderWhere, status: 'NEW' },
+          where: { ...orderWhere, status: { in: ['PICKED', 'IN_TRANSIT', 'DELIVERED'] }, createdAt: { gte: today } },
         }),
-        this.prisma.order.count({
-          where: { ...orderWhere, status: 'ACCEPTED' },
-        }),
-        this.prisma.order.count({
-          where: {
-            ...orderWhere,
-            status: { in: ['PICKED', 'IN_TRANSIT', 'DELIVERED'] },
-            createdAt: { gte: today },
-          },
-        }),
-        this.prisma.product.count({
-          where: productWhere,
-        }),
+        this.prisma.product.count({ where: productWhere }),
         this.prisma.order.aggregate({
-          where: {
-            ...orderWhere,
-            createdAt: { gte: today },
-          },
+          where: { ...orderWhere, createdAt: { gte: today } },
           _sum: { totalAmount: true },
         }),
+        this.prisma.driver.count({ where: { isOnline: true } }),
+        Promise.all(
+          days.map((day) => {
+            const nextDay = new Date(day);
+            nextDay.setDate(nextDay.getDate() + 1);
+            return this.prisma.order.aggregate({
+              where: { ...orderWhere, createdAt: { gte: day, lt: nextDay } },
+              _sum: { totalAmount: true },
+              _count: { id: true },
+            }).then((r) => ({
+              date: day.toISOString().slice(0, 10),
+              sales: r._sum.totalAmount || 0,
+              count: r._count.id || 0,
+            }));
+          }),
+        ),
       ]);
 
     return {
@@ -52,6 +59,8 @@ export class DistributorService {
       shippedOrders,
       lowStockProducts,
       revenue: revenue._sum.totalAmount || 0,
+      activeDrivers,
+      salesTrend: salesTrendRaw,
     };
   }
 

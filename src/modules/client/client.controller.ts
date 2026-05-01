@@ -37,13 +37,13 @@ export class ClientController {
     return this.clientService.getDistributors(client.id, region, search);
   }
 
-  @Post('distributors/:distributorId/connect')
-  @ApiOperation({ summary: "Distribyutorga ulanish so'rovi" })
-  connectDistributor(
+  @Get('distributors/:distributorId')
+  @ApiOperation({ summary: "Distribyutor tafsilotlari" })
+  getDistributorById(
     @Param('distributorId') distributorId: string,
     @CurrentUser('client') client: any,
   ) {
-    return this.clientService.connectDistributor(client.id, distributorId);
+    return this.clientService.getDistributorById(client.id, distributorId);
   }
 
   @Get('finance')

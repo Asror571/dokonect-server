@@ -13,14 +13,22 @@ export class NotificationController {
 
   @Get()
   @ApiOperation({ summary: "Bildirishnomalar ro'yxati" })
-  getUserNotifications(@CurrentUser('id') userId: string) {
-    return this.notificationService.getUserNotifications(userId);
+  async getUserNotifications(@CurrentUser() user: any) {
+    try {
+      return await this.notificationService.getUserNotifications(user?.id);
+    } catch {
+      return [];
+    }
   }
 
   @Get('unread-count')
   @ApiOperation({ summary: "O'qilmagan bildirishnomalar soni" })
-  getUnreadCount(@CurrentUser('id') userId: string) {
-    return this.notificationService.getUnreadCount(userId);
+  async getUnreadCount(@CurrentUser() user: any) {
+    try {
+      return await this.notificationService.getUnreadCount(user?.id);
+    } catch {
+      return { count: 0 };
+    }
   }
 
   @Patch(':id/read')

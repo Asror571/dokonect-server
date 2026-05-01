@@ -100,54 +100,59 @@ export class ClientService {
     return { products, total, page: parseInt(page) || 1, limit: take };
   }
 
-  async getDistributors(clientId: string, region?: string, search?: string) {
+  async getDistributors(_clientId: string, region?: string, search?: string) {
     const where: any = { isVerified: true };
-    if (search) {
-      where.companyName = { contains: search, mode: 'insensitive' };
-    }
+    if (search) where.companyName = { contains: search, mode: 'insensitive' };
+    if (region) where.region = region;
 
     const distributors = await this.prisma.distributor.findMany({
       where,
-      include: {
-        user: { select: { name: true, avatar: true } },
-        storeLinks: {
-          where: { storeOwnerId: clientId },
-        },
-      },
+      include: { user: { select: { name: true, avatar: true } } },
     });
 
-    return distributors.map((d) => ({
+    return distributors.map((d: any) => ({
       id: d.id,
       companyName: d.companyName,
       logo: d.logo,
       address: d.address,
+      phone: d.phone || d.user?.phone,
+      region: d.region,
       rating: d.rating,
       isVerified: d.isVerified,
-      linkStatus: d.storeLinks[0]?.status || 'NONE',
     }));
   }
 
-  async connectDistributor(clientId: string, distributorId: string) {
-    const existingLink = await this.prisma.storeDistributorLink.findUnique({
-      where: {
-        storeOwnerId_distributorId: {
-          storeOwnerId: clientId,
-          distributorId,
+  async getDistributorById(_clientId: string, distributorId: string) {
+    const d: any = await this.prisma.distributor.findUnique({
+      where: { id: distributorId },
+      include: {
+        user: { select: { name: true, avatar: true, phone: true } },
+        products: {
+          where: { status: 'ACTIVE' },
+          include: { images: { where: { isCover: true }, take: 1 }, category: true },
+          take: 20,
+          orderBy: { createdAt: 'desc' },
         },
+        categories: { orderBy: { order: 'asc' } },
       },
     });
 
-    if (existingLink) {
-      throw new BadRequestException("Ulanish so'rovi allaqachon mavjud");
-    }
+    if (!d) throw new NotFoundException('Distribyutor topilmadi');
 
-    return this.prisma.storeDistributorLink.create({
-      data: {
-        storeOwnerId: clientId,
-        distributorId,
-        status: 'PENDING',
-      },
-    });
+    return {
+      id: d.id,
+      companyName: d.companyName,
+      logo: d.logo,
+      address: d.address,
+      phone: d.phone || d.user?.phone,
+      region: d.region,
+      rating: d.rating,
+      isVerified: d.isVerified,
+      description: d.description,
+      products: d.products,
+      categories: d.categories,
+      productsCount: d.products?.length ?? 0,
+    };
   }
 
   async getFinanceSummary(clientId: string) {

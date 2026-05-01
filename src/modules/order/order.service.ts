@@ -2,10 +2,14 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateOrderDto, UpdateOrderStatusDto } from './dto';
 import { OrderStatus } from '@prisma/client';
+import { EventsGateway } from '../events/events.gateway';
 
 @Injectable()
 export class OrderService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private events: EventsGateway,
+  ) {}
 
   async create(clientId: string, dto: CreateOrderDto) {
     // Validate products exist and calculate totals
@@ -92,6 +96,14 @@ export class OrderService {
         },
       });
     }
+
+    // Real-time: distribyutorga yangi buyurtma xabari
+    this.events.emitToDistributor(dto.distributorId, 'order:new', {
+      id: order.id,
+      totalAmount: order.totalAmount,
+      clientId: order.clientId,
+      createdAt: order.createdAt,
+    });
 
     return order;
   }

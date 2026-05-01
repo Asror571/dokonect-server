@@ -21,6 +21,7 @@ import { PricingModule } from './modules/pricing/pricing.module';
 import { CategoryModule } from './modules/category/category.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { BulkUploadModule } from './modules/bulk-upload/bulk-upload.module';
+import { EventsModule } from './modules/events/events.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { HealthController } from './health.controller';
 
@@ -49,6 +50,7 @@ import { HealthController } from './health.controller';
     CategoryModule,
     UploadModule,
     BulkUploadModule,
+    EventsModule,
   ],
   controllers: [HealthController],
   providers: [

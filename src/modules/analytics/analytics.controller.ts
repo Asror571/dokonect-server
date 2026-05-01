@@ -20,9 +20,24 @@ export class AnalyticsController {
   getDistributorAnalytics(
     @CurrentUser() user: any,
     @Query('period') period?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
   ) {
     const distributorId = user.distributor?.id || null;
-    return this.analyticsService.getDistributorAnalytics(distributorId, period);
+    return this.analyticsService.getDistributorAnalytics(distributorId, period, from, to);
+  }
+
+  @Get('payments')
+  @Roles(Role.DISTRIBUTOR, Role.ADMIN)
+  @ApiOperation({ summary: "To'lovlar tahlili" })
+  getPaymentsAnalytics(
+    @CurrentUser() user: any,
+    @Query('period') period?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    const distributorId = user.distributor?.id || null;
+    return this.analyticsService.getPaymentsAnalytics(distributorId, from, to, period);
   }
 
   @Get('client')
