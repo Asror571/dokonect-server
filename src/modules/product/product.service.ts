@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateProductDto, UpdateProductDto, ProductQueryDto } from './dto';
 import { ProductAnalyticsService } from './product-analytics.service';
@@ -303,7 +303,9 @@ export class ProductService {
 
       return product;
     } catch (error: any) {
-      console.error('Product create error:', error);
+      if (error.code === 'P2002') {
+        throw new ConflictException('Bu SKU allaqachon mavjud. Boshqa SKU kiriting.');
+      }
       throw new Error(error.message || 'Mahsulot yaratishda xatolik');
     }
   }
