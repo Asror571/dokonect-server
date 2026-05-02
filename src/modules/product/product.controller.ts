@@ -27,6 +27,12 @@ export class ProductController {
     return this.productService.findAll(query);
   }
 
+  @Get('popular')
+  @ApiOperation({ summary: 'Eng mashhur mahsulotlar (eng tez sotilayotganlar)' })
+  getPopular(@Query('limit') limit: string = '10', @Query('distributorId') distributorId?: string) {
+    return this.productService.getPopularProducts(parseInt(limit), distributorId);
+  }
+
   @Get('categories')
   @ApiOperation({ summary: "Kategoriyalar ro'yxati" })
   getCategories(@Query('distributorId') distributorId?: string) {

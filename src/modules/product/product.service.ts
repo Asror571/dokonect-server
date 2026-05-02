@@ -237,6 +237,84 @@ export class ProductService {
     });
   }
 
+  async getPopularProducts(limit: number = 10, distributorId?: string) {
+    const where: any = {
+      status: 'ACTIVE',
+      salesVelocity: {
+        isNot: null,
+      },
+    };
+
+    if (distributorId) {
+      where.distributorId = distributorId;
+    }
+
+    const products = await this.prisma.product.findMany({
+      where,
+      take: limit,
+      include: {
+        images: true,
+        category: true,
+        brand: true,
+        distributor: {
+          select: {
+            id: true,
+            companyName: true,
+            logo: true,
+            rating: true,
+          },
+        },
+        inventory: {
+          select: {
+            quantity: true,
+            reserved: true,
+            warehouse: true,
+          },
+        },
+        salesVelocity: true,
+        reviews: {
+          select: {
+            rating: true,
+          },
+        },
+      },
+      orderBy: {
+        salesVelocity: {
+          dailyAverage: 'desc',
+        },
+      },
+    });
+
+    // Statistika qo'shish
+    const productsWithStats = products.map((product) => {
+      const totalStock = product.inventory.reduce((sum, inv) => sum + inv.quantity, 0);
+      const totalReserved = product.inventory.reduce((sum, inv) => sum + inv.reserved, 0);
+      const available = totalStock - totalReserved;
+
+      // O'rtacha reyting
+      const avgRating = product.reviews.length > 0
+        ? product.reviews.reduce((sum, r) => sum + r.rating, 0) / product.reviews.length
+        : 0;
+
+      return {
+        ...product,
+        totalStock,
+        available,
+        avgRating: Math.round(avgRating * 10) / 10,
+        reviewCount: product.reviews.length,
+        dailySales: product.salesVelocity?.dailyAverage || 0,
+        weeklySales: product.salesVelocity?.weeklyAverage || 0,
+        monthlySales: product.salesVelocity?.monthlyAverage || 0,
+        velocityStatus: product.salesVelocity?.status || 'MEDIUM',
+      };
+    });
+
+    return {
+      products: productsWithStats,
+      total: productsWithStats.length,
+    };
+  }
+
   async create(distributorId: string, dto: CreateProductDto) {
     try {
       const { images, variants, initialStock, ...productData } = dto as any;
@@ -248,20 +326,20 @@ export class ProductService {
 
       const product = await this.prisma.product.create({
         data: {
-          name:          productData.name,
+          name: productData.name,
           sku,
-          description:   productData.description   || null,
+          description: productData.description || null,
           wholesalePrice: Number(productData.wholesalePrice),
-          retailPrice:   productData.retailPrice   ? Number(productData.retailPrice)  : null,
-          costPrice:     productData.costPrice     ? Number(productData.costPrice)    : null,
-          unit:          productData.unit          || 'dona',
-          status:        productData.status        || 'ACTIVE',
-          youtubeUrl:    productData.youtubeUrl    || null,
-          discountType:  productData.discountType  || null,
+          retailPrice: productData.retailPrice ? Number(productData.retailPrice) : null,
+          costPrice: productData.costPrice ? Number(productData.costPrice) : null,
+          unit: productData.unit || 'dona',
+          status: productData.status || 'ACTIVE',
+          youtubeUrl: productData.youtubeUrl || null,
+          discountType: productData.discountType || null,
           discountValue: productData.discountValue ? Number(productData.discountValue) : null,
-          distributor:   { connect: { id: distributorId } },
-          category:      productData.categoryId ? { connect: { id: productData.categoryId } } : undefined,
-          brand:         productData.brandId    ? { connect: { id: productData.brandId } }    : undefined,
+          distributor: { connect: { id: distributorId } },
+          category: productData.categoryId ? { connect: { id: productData.categoryId } } : undefined,
+          brand: productData.brandId ? { connect: { id: productData.brandId } } : undefined,
           images: images?.length
             ? {
               create: images.map((url: string, index: number) => ({
