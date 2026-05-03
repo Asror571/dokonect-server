@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { ProductService } from './product.service';
 import { ProductAnalyticsService } from './product-analytics.service';
 import { ProductHistoryService } from './product-history.service';
@@ -29,6 +29,8 @@ export class ProductController {
 
   @Get('popular')
   @ApiOperation({ summary: 'Eng mashhur mahsulotlar (eng tez sotilayotganlar)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Nechta mahsulot qaytarish (default: 10)', example: 10 })
+  @ApiQuery({ name: 'distributorId', required: false, type: String, description: 'Distribyutor ID (optional)' })
   getPopular(@Query('limit') limit: string = '10', @Query('distributorId') distributorId?: string) {
     return this.productService.getPopularProducts(parseInt(limit), distributorId);
   }
