@@ -16,6 +16,7 @@ export class ProductService {
     const {
       search,
       category,
+      categoryId,
       page = 1,
       limit = 20,
       distributorId,
@@ -44,7 +45,10 @@ export class ProductService {
       ];
     }
 
-    if (category) {
+    // Kategoriya bo'yicha filter (ID yoki slug)
+    if (categoryId) {
+      where.categoryId = categoryId;
+    } else if (category) {
       where.category = {
         slug: category,
       };

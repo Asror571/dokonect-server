@@ -9,7 +9,7 @@ export class OrderService {
   constructor(
     private prisma: PrismaService,
     private events: EventsGateway,
-  ) {}
+  ) { }
 
   async create(clientId: string, dto: CreateOrderDto) {
     // Validate products exist and calculate totals
@@ -165,6 +165,47 @@ export class OrderService {
                 phone: true,
               },
             },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async findAllForDriver(driverId: string, status?: OrderStatus) {
+    const where: any = { driverId };
+    if (status) {
+      where.status = status;
+    }
+
+    return this.prisma.order.findMany({
+      where,
+      include: {
+        items: {
+          include: {
+            product: {
+              select: {
+                name: true,
+                images: true,
+              },
+            },
+          },
+        },
+        client: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                phone: true,
+              },
+            },
+          },
+        },
+        distributor: {
+          select: {
+            companyName: true,
+            phone: true,
+            address: true,
           },
         },
       },

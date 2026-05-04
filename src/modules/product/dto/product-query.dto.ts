@@ -8,12 +8,17 @@ export class ProductQueryDto {
   @IsOptional()
   search?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Kategoriya slug (masalan: electronics)' })
   @IsString()
   @IsOptional()
   category?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Kategoriya ID' })
+  @IsString()
+  @IsOptional()
+  categoryId?: string;
+
+  @ApiPropertyOptional({ description: 'Distribyutor ID' })
   @IsString()
   @IsOptional()
   distributorId?: string;

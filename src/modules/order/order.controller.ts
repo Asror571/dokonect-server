@@ -13,7 +13,7 @@ import { Role, OrderStatus } from '@prisma/client';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class OrderController {
-  constructor(private orderService: OrderService) {}
+  constructor(private orderService: OrderService) { }
 
   @Post()
   @UseGuards(RolesGuard)
@@ -25,12 +25,37 @@ export class OrderController {
 
   @Get()
   @ApiOperation({ summary: "O'z buyurtmalarim" })
-  findAll(@CurrentUser() user: any, @Query('status') status?: OrderStatus) {
+  async findAll(@CurrentUser() user: any, @Query('status') status?: OrderStatus) {
+    console.log('📦 Orders request - User:', {
+      id: user.id,
+      role: user.role,
+      hasClient: !!user.client,
+      hasDistributor: !!user.distributor
+    });
+
     if (user.role === Role.CLIENT) {
+      if (!user.client) {
+        console.error('❌ CLIENT role but no client data');
+        return [];
+      }
       return this.orderService.findAllForClient(user.client.id, status);
     } else if (user.role === Role.DISTRIBUTOR) {
+      if (!user.distributor) {
+        console.error('❌ DISTRIBUTOR role but no distributor data');
+        return [];
+      }
       return this.orderService.findAllForDistributor(user.distributor.id, status);
+    } else if (user.role === Role.DRIVER) {
+      // Driver uchun ham qo'shamiz
+      if (!user.driver) {
+        console.error('❌ DRIVER role but no driver data');
+        return [];
+      }
+      return this.orderService.findAllForDriver(user.driver.id, status);
     }
+
+    console.error('❌ Unknown role or no data:', user.role);
+    return [];
   }
 
   @Get(':id')

@@ -12,22 +12,44 @@ import { Role } from '@prisma/client';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class DebtController {
-  constructor(private debtService: DebtService) {}
+  constructor(private debtService: DebtService) { }
 
   @Get('client')
   @UseGuards(RolesGuard)
   @Roles(Role.CLIENT)
-  @ApiOperation({ summary: 'Client qarzlari' })
-  getClientDebts(@CurrentUser('client') client: any) {
-    return this.debtService.getClientDebts(client.id);
+  @ApiOperation({ summary: 'Do\'kon egasining qarzlari' })
+  getClientDebts(@CurrentUser() user: any) {
+    console.log('💰 Client debts request - User:', {
+      id: user.id,
+      role: user.role,
+      hasClient: !!user.client,
+      clientId: user.client?.id
+    });
+
+    if (!user.client) {
+      console.error('❌ CLIENT role but no client data');
+      return [];
+    }
+    return this.debtService.getClientDebts(user.client.id);
   }
 
   @Get('distributor')
   @UseGuards(RolesGuard)
   @Roles(Role.DISTRIBUTOR)
-  @ApiOperation({ summary: 'Distributor qarzlari' })
-  getDistributorDebts(@CurrentUser('distributor') distributor: any) {
-    return this.debtService.getDistributorDebts(distributor.id);
+  @ApiOperation({ summary: 'Distribyutor qarzlari (mijozlardan)' })
+  getDistributorDebts(@CurrentUser() user: any) {
+    console.log('💰 Distributor debts request - User:', {
+      id: user.id,
+      role: user.role,
+      hasDistributor: !!user.distributor,
+      distributorId: user.distributor?.id
+    });
+
+    if (!user.distributor) {
+      console.error('❌ DISTRIBUTOR role but no distributor data');
+      return [];
+    }
+    return this.debtService.getDistributorDebts(user.distributor.id);
   }
 
   @Post(':debtId/pay')
@@ -39,8 +61,16 @@ export class DebtController {
   @Get('summary')
   @UseGuards(RolesGuard)
   @Roles(Role.CLIENT)
-  @ApiOperation({ summary: 'Qarz xulosasi' })
-  getDebtSummary(@CurrentUser('client') client: any) {
-    return this.debtService.getDebtSummary(client.id);
+  @ApiOperation({ summary: 'Qarz xulosasi (umumiy, to\'langan, muddati o\'tgan)' })
+  getDebtSummary(@CurrentUser() user: any) {
+    if (!user.client) {
+      return {
+        totalDebt: 0,
+        totalPaid: 0,
+        overdueCount: 0,
+        overdueAmount: 0,
+      };
+    }
+    return this.debtService.getDebtSummary(user.client.id);
   }
 }

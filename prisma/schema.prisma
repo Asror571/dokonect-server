@@ -364,6 +364,7 @@ model ReviewReply {
 
 model Order {
   id               String               @id @default(uuid())
+  orderNumber      Int                  @unique @default(autoincrement())
   clientId         String
   distributorId    String
   driverId         String?
