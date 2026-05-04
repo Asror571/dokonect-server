@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+﻿import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -34,14 +34,32 @@ export class AdminController {
 
   @Get('users')
   @ApiOperation({ summary: 'Barcha foydalanuvchilar' })
-  getAllUsers() {
-    return this.adminService.getAllUsers();
+  getAllUsers(@Query('role') role?: string, @Query('search') search?: string) {
+    return this.adminService.getAllUsers(role, search);
+  }
+
+  @Post('users')
+  @ApiOperation({ summary: 'Yangi foydalanuvchi yaratish' })
+  createUser(@Body() data: any) {
+    return this.adminService.createUser(data);
+  }
+
+  @Delete('users/:userId')
+  @ApiOperation({ summary: "Foydalanuvchini o'chirish" })
+  deleteUser(@Param('userId') userId: string) {
+    return this.adminService.deleteUser(userId);
   }
 
   @Patch('users/:userId/status')
   @ApiOperation({ summary: "Foydalanuvchi statusini o'zgartirish" })
   updateUserStatus(@Param('userId') userId: string, @Body('status') status: string) {
     return this.adminService.updateUserStatus(userId, status);
+  }
+
+  @Patch('users/:userId/role')
+  @ApiOperation({ summary: "Foydalanuvchi rolini o'zgartirish" })
+  updateUserRole(@Param('userId') userId: string, @Body('role') role: string) {
+    return this.adminService.updateUserRole(userId, role);
   }
 
   @Get('analytics')
@@ -75,8 +93,20 @@ export class AdminController {
   }
 
   @Delete('distributors/:id')
-  @ApiOperation({ summary: 'Distributorni o\'chirish' })
+  @ApiOperation({ summary: "Distributorni o'chirish" })
   deleteDistributor(@Param('id') id: string) {
     return this.adminService.deleteDistributor(id);
+  }
+
+  @Get('distributors/:id/stats')
+  @ApiOperation({ summary: 'Distributor statistikasi' })
+  getDistributorStats(@Param('id') id: string) {
+    return this.adminService.getDistributorStats(id);
+  }
+
+  @Get('stores/:storeId/payments')
+  @ApiOperation({ summary: "Do'kon to'lovlari tarixi" })
+  getStorePayments(@Param('storeId') storeId: string) {
+    return this.adminService.getStorePayments(storeId);
   }
 }
