@@ -41,6 +41,8 @@ export class AuthService {
           userId: user.id,
           storeName: dto.storeName,
           region: dto.region,
+          lat: dto.lat,
+          lng: dto.lng,
         },
       });
     } else if (dto.role === 'DISTRIBUTOR') {

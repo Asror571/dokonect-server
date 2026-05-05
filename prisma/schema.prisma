@@ -43,6 +43,8 @@ model Client {
   region        String?
   storeName     String?
   taxId         String?
+  lat           Float?
+  lng           Float?
   user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   ratings       DeliveryRating[]
   orders        Order[]
