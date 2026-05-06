@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
+﻿import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ClientService } from './client.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -14,6 +14,12 @@ import { Role } from '@prisma/client';
 @ApiBearerAuth()
 export class ClientController {
   constructor(private clientService: ClientService) {}
+
+  @Patch('profile')
+  @ApiOperation({ summary: 'Profil yangilash' })
+  updateProfile(@CurrentUser() user: any, @Body() data: any) {
+    return this.clientService.updateProfile(user.id, data);
+  }
 
   @Get('dashboard')
   @ApiOperation({ summary: 'Client dashboard' })

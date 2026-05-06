@@ -1,10 +1,25 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+﻿import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ClientService {
   constructor(private prisma: PrismaService) {}
+
+  async updateProfile(userId: string, data: any) {
+    const client = await this.prisma.client.findUnique({ where: { userId } });
+    if (!client) throw new Error('Profil topilmadi');
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { name: data.name, phone: data.phone },
+    });
+    const updated = await this.prisma.client.update({
+      where: { userId },
+      data: { storeName: data.name, ...( data.address ? { addresses: { main: data.address } } : {} ) },
+      include: { user: true },
+    });
+    return { success: true, data: updated };
+  }
 
   async getDashboard(clientId: string) {
     const [activeOrder, recentOrders, client] = await Promise.all([
